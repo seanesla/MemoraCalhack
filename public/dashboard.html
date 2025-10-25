@@ -662,6 +662,38 @@
             line-height: 1.6;
         }
 
+        .ai-reasoning {
+            margin-top: 16px;
+            padding: 12px;
+            background: rgba(255, 183, 77, 0.08);
+            border-left: 3px solid #FFB74D;
+            border-radius: 4px;
+        }
+
+        .ai-reasoning-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #FFB74D;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .ai-reasoning-label svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .ai-reasoning-text {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.85);
+            line-height: 1.5;
+            font-style: italic;
+        }
+
         .core-memory-badge.editable {
             cursor: pointer;
             transition: all 0.2s ease;
@@ -2493,6 +2525,17 @@
                             <div class="core-memory-value" id="core-memory-persona-value">
                                 Speak with warmth, steady pacing, and gentle affirmations. Offer grounding sensory cues when anxiety rises.
                             </div>
+                            <div class="ai-reasoning">
+                                <div class="ai-reasoning-label">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                    </svg>
+                                    AI Reasoning
+                                </div>
+                                <div class="ai-reasoning-text">
+                                    Defines conversation style and tone. Stored in Core Memory because it's checked on every response to maintain consistent, appropriate communication. Manually editable by caregiver to adjust as John's needs change.
+                                </div>
+                            </div>
                             <div class="core-memory-edit" id="core-memory-persona-edit" style="display: none;">
                                 <textarea class="core-memory-textarea" id="core-memory-persona-input"></textarea>
                                 <div class="core-memory-actions">
@@ -2510,6 +2553,17 @@
                             <div class="core-memory-value" id="core-memory-patient-value">
                                 John Smith, 72. Retired middle-school literature teacher. Married to Ava. Loves jazz piano, gardening, and storytelling about road trips. Finds comfort in soft instrumental music and mint tea. Grandchildren: Lily (9), Mateo (6).
                             </div>
+                            <div class="ai-reasoning">
+                                <div class="ai-reasoning-label">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                    </svg>
+                                    AI Reasoning
+                                </div>
+                                <div class="ai-reasoning-text">
+                                    Personal details referenced in 85% of conversations for personalization. Kept in Core Memory for &lt;200ms retrieval time. Essential for maintaining continuity and preventing repetitive questions.
+                                </div>
+                            </div>
                             <div class="core-memory-edit" id="core-memory-patient-edit" style="display: none;">
                                 <textarea class="core-memory-textarea" id="core-memory-patient-input"></textarea>
                                 <div class="core-memory-actions">
@@ -2526,6 +2580,17 @@
                             </div>
                             <div class="core-memory-value" id="core-memory-context-value">
                                 It is Thursday evening. Earlier today John walked in Live Oak Park. Ava is preparing for tomorrow's brunch with neighbors. Weather is cool and foggy.
+                            </div>
+                            <div class="ai-reasoning">
+                                <div class="ai-reasoning-label">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                    </svg>
+                                    AI Reasoning
+                                </div>
+                                <div class="ai-reasoning-text">
+                                    Auto-updated every 6 hours based on: time of day, recent conversations, caregiver calendar, local weather API. Provides situational awareness for contextually relevant responses without asking John to repeat information.
+                                </div>
                             </div>
                             <div class="core-memory-edit" id="core-memory-context-edit" style="display: none;">
                                 <textarea class="core-memory-textarea" id="core-memory-context-input"></textarea>
@@ -2558,6 +2623,17 @@
                                 <span class="archival-tag">upcoming</span>
                                 <span class="archival-tag">music</span>
                             </div>
+                            <div class="ai-reasoning">
+                                <div class="ai-reasoning-label">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                    </svg>
+                                    AI Reasoning
+                                </div>
+                                <div class="ai-reasoning-text">
+                                    Stored because: John mentioned Lily 3 times in this conversation (emotional significance detected). Tagged 'family' for semantic search. Will auto-archive after recital date passes unless John references it again.
+                                </div>
+                            </div>
                         </div>
 
                         <div class="archival-memory-card">
@@ -2572,6 +2648,17 @@
                                 <span class="archival-tag">routine</span>
                                 <span class="archival-tag">nature</span>
                                 <span class="archival-tag">memory-cue</span>
+                            </div>
+                            <div class="ai-reasoning">
+                                <div class="ai-reasoning-label">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                    </svg>
+                                    AI Reasoning
+                                </div>
+                                <div class="ai-reasoning-text">
+                                    Stored because: Positive affect detected (tone analysis: 8.2/10). Routine patterns help with orientation and autonomy. Tagged 'memory-cue' to trigger weekend watering reminders without seeming robotic.
+                                </div>
                             </div>
                         </div>
 
@@ -2596,6 +2683,17 @@
                             <div class="alert-config">
                                 Usual area: 110m • Quiet Hours: 21:00-06:00 • Channels: SMS, Email
                             </div>
+                            <div class="ai-reasoning">
+                                <div class="ai-reasoning-label">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                    </svg>
+                                    AI Reasoning
+                                </div>
+                                <div class="ai-reasoning-text">
+                                    110m threshold based on John's walking pattern analysis (last 30 days): 95% of walks stay within this radius. Quiet hours prevent false alerts during sleep. Can be disabled by John at any time via privacy controls.
+                                </div>
+                            </div>
                         </div>
 
                         <div class="alert-card enabled">
@@ -2608,6 +2706,17 @@
                             </div>
                             <div class="alert-config">
                                 Inactivity Threshold: 3 hours • Channels: Push, Email
+                            </div>
+                            <div class="ai-reasoning">
+                                <div class="ai-reasoning-label">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                    </svg>
+                                    AI Reasoning
+                                </div>
+                                <div class="ai-reasoning-text">
+                                    3-hour threshold calibrated from John's typical activity rhythm. Baseline: usually active for 10-15 minutes every 2 hours during daytime. Alert triggers if no movement detected for 3+ consecutive hours (9:00-21:00 only).
+                                </div>
                             </div>
                         </div>
                     </div>

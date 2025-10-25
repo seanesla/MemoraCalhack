@@ -121,21 +121,24 @@ export const mockCareState: CareState = {
       label: "Agent Persona",
       value:
         "Speak with warmth, steady pacing, and gentle affirmations. Offer grounding sensory cues when anxiety rises.",
-      editable: true
+      editable: true,
+      reasoning: "Defines conversation style and tone. Stored in Core Memory because it's checked on every response to maintain consistent, appropriate communication. Manually editable by caregiver to adjust as John's needs change."
     },
     {
       key: "human",
       label: "Patient Profile",
       value:
         "John Smith, 72. Retired middle-school literature teacher. Married to Ava. Loves jazz piano, gardening, and storytelling about road trips. Finds comfort in soft instrumental music and mint tea. Grandchildren: Lily (9), Mateo (6).",
-      editable: true
+      editable: true,
+      reasoning: "Personal details referenced in 85% of conversations for personalization. Kept in Core Memory for <200ms retrieval time. Essential for maintaining continuity and preventing repetitive questions."
     },
     {
       key: "context",
       label: "Current Context",
       value:
         "It is Thursday evening. Earlier today John walked in Live Oak Park. Ava is preparing for tomorrow's brunch with neighbors. Weather is cool and foggy.",
-      autoUpdate: true
+      autoUpdate: true,
+      reasoning: "Auto-updated every 6 hours based on: time of day, recent conversations, caregiver calendar, local weather API. Provides situational awareness for contextually relevant responses without asking John to repeat information."
     }
   ],
   archivalMemory: [
@@ -146,7 +149,8 @@ export const mockCareState: CareState = {
       summary:
         "Discussed Lily's piano recital program and scheduled gentle reminders for morning practice cues.",
       tags: ["family", "upcoming", "music"],
-      tone: "celebratory"
+      tone: "celebratory",
+      reasoning: "Stored because: John mentioned Lily 3 times in this conversation (emotional significance detected). Tagged 'family' for semantic search. Will auto-archive after recital date passes unless John references it again."
     },
     {
       id: "arch-002",
@@ -155,7 +159,8 @@ export const mockCareState: CareState = {
       summary:
         "Captured John's joy describing tomato vines; built sensory prompt for weekend watering routine.",
       tags: ["routine", "nature", "memory-cue"],
-      tone: "reflective"
+      tone: "reflective",
+      reasoning: "Stored because: Positive affect detected (tone analysis: 8.2/10). Routine patterns help with orientation and autonomy. Tagged 'memory-cue' to trigger weekend watering reminders without seeming robotic."
     },
   ],
   alerts: {
@@ -163,12 +168,14 @@ export const mockCareState: CareState = {
       enabled: true,
       safeRadiusMeters: 110,
       quietHours: { start: "21:00", end: "06:00" },
-      channels: ["sms", "email"]
+      channels: ["sms", "email"],
+      reasoning: "110m threshold based on John's walking pattern analysis (last 30 days): 95% of walks stay within this radius. Quiet hours prevent false alerts during sleep. Can be disabled by John at any time via privacy controls."
     },
     activityPatterns: {
       enabled: true,
       inactivityThresholdHours: 3,
-      channels: ["push"]
+      channels: ["push"],
+      reasoning: "3-hour threshold calibrated from John's typical activity rhythm. Baseline: usually active for 10-15 minutes every 2 hours during daytime. Alert triggers if no movement detected for 3+ consecutive hours (9:00-21:00 only)."
     }
   },
   voiceSession: {

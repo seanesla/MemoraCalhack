@@ -66,6 +66,7 @@ export interface CoreMemoryBlock {
   value: string;
   editable?: boolean;
   autoUpdate?: boolean;
+  reasoning?: string;
 }
 
 export interface ArchivalMemoryEntry {
@@ -75,6 +76,7 @@ export interface ArchivalMemoryEntry {
   summary: string;
   tags: string[];
   tone: "celebratory" | "reflective" | "alert";
+  reasoning?: string;
 }
 
 export interface AlertConfig {
@@ -88,6 +90,7 @@ export interface AlertConfig {
     end: string;
   };
   inactivityThresholdHours?: number;
+  reasoning?: string;
 }
 
 export interface Alerts {
