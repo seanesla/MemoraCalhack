@@ -419,6 +419,64 @@
             color: #000000;
         }
 
+        /* Behavioral Metrics Grid */
+        .behavioral-metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .metric-item {
+            background: rgba(0, 0, 0, 0.08);
+            padding: 16px;
+            border-radius: 6px;
+            border-left: 3px solid #000000;
+        }
+
+        .metric-label {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #000000;
+            opacity: 0.7;
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #000000;
+            margin-bottom: 8px;
+            line-height: 1.2;
+        }
+
+        .metric-comparison {
+            font-size: 14px;
+            font-weight: 500;
+            opacity: 0.8;
+            margin-left: 8px;
+        }
+
+        .metric-note {
+            font-size: 13px;
+            color: #000000;
+            opacity: 0.75;
+            line-height: 1.4;
+            font-style: italic;
+        }
+
+        .metrics-updated {
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 2px solid rgba(0, 0, 0, 0.15);
+            font-size: 13px;
+            color: #000000;
+            opacity: 0.6;
+            text-align: right;
+        }
+
         .card-label {
             font-size: 16px;
             font-weight: 500;
@@ -2005,6 +2063,15 @@
             .page-title {
                 font-size: 36px;
             }
+
+            .behavioral-metrics-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+
+            .metric-value {
+                font-size: 20px;
+            }
         }
     </style>
 </head>
@@ -2153,12 +2220,32 @@
                 </div>
 
                 <div class="dashboard-grid">
-                    <!-- Hero Card -->
+                    <!-- Behavioral Metrics Card -->
                     <div class="hero-card card">
-                        <div class="card-label">Engagement Score</div>
-                        <div class="card-value">9.2/10 <span style="color: #4CAF50; font-size: 0.6em; margin-left: 8px;">↑ from 8.5 yesterday</span></div>
-                        <div class="card-subtitle">Better than usual - Strong interaction today</div>
-                        <div class="status-good">All systems normal</div>
+                        <div class="card-label">Behavioral Metrics</div>
+                        <div class="behavioral-metrics-grid">
+                            <div class="metric-item">
+                                <div class="metric-label">Response Time</div>
+                                <div class="metric-value">1.8s <span class="metric-comparison">↓ from 2.1s baseline</span></div>
+                                <div class="metric-note">Faster than typical - indicates alertness</div>
+                            </div>
+                            <div class="metric-item">
+                                <div class="metric-label">Unprompted Memory Recall</div>
+                                <div class="metric-value">2 instances <span class="metric-comparison">↑ from 1/day baseline</span></div>
+                                <div class="metric-note">Lily's recital, Big Sur honeymoon - long-term retrieval working well</div>
+                            </div>
+                            <div class="metric-item">
+                                <div class="metric-label">Temporal Orientation</div>
+                                <div class="metric-value">2 date checks <span class="metric-comparison">= baseline (1-2/day)</span></div>
+                                <div class="metric-note">Within normal range for John</div>
+                            </div>
+                            <div class="metric-item">
+                                <div class="metric-label">Question Repetition</div>
+                                <div class="metric-value">5× "When is Ava visiting?" <span class="metric-comparison">↑ from 2-3× baseline</span></div>
+                                <div class="metric-note">May indicate anxiety about schedule - consider proactive reminder</div>
+                            </div>
+                        </div>
+                        <div class="metrics-updated">Last updated: 9 minutes ago</div>
                     </div>
 
                     <!-- Photo Card -->
