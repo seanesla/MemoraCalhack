@@ -1,6 +1,6 @@
 # Memora
 
-A voice-first AI companion application for dementia care, preserving dignity and connection for those navigating cognitive challenges.
+A voice-first AI companion application for dementia care, providing support and connection for those navigating cognitive challenges.
 
 **Built for Cal Hacks 12.0 • October 2025**
 
@@ -24,17 +24,17 @@ Memora implements two distinct interfaces designed for different users:
 - Voice-first companion with simple, supportive UI
 - Orientation cues: date, time, weather
 - "I'm here with you" reassuring language
-- **NO surveillance data** - preserves dignity
-- **NO cognitive metrics** - no shame or anxiety
+- **Privacy dashboard** - John controls what data caregivers see
+- **NO cognitive performance metrics shown** - no shame or anxiety
 
 **Caregiver Dashboard** (`/dashboard.html`) - For Ava (family caregiver):
-- Analytics and monitoring tools
+- Behavioral analytics and monitoring tools
 - Timeline of events, alerts, activities
-- 3-tier memory system management
+- 3-tier memory system with AI reasoning explanations
 - Voice Chat with edit functionality
-- AI-generated insights
+- Consent notifications when John changes privacy settings
 
-**Why this matters**: Showing a dementia patient their own "engagement scores" or "wandering alerts" is harmful and undignified. Our separation ensures the patient experiences supportive companionship while caregivers get the tools they need.
+**Why this matters**: Showing a dementia patient caregiver surveillance metrics (location tracking, behavioral analytics) is harmful. The patient interface provides supportive companionship with privacy controls, while caregivers get monitoring tools with transparent data collection and patient consent.
 
 ---
 
@@ -47,7 +47,7 @@ Memora implements two distinct interfaces designed for different users:
 - **Accessibility** - High contrast, large touch targets, voice-first interaction model
 
 ### 📊 Caregiver Dashboard
-- **Overview** - Engagement scores, activities, medications, sleep quality, mood tracking, AI insights, memory moments
+- **Overview** - Behavioral metrics (response time, memory recall, orientation, question patterns), medications tracking, consent notifications
 - **Voice Chat** - Purple-themed chat interface with persistent bottom bar, message timestamps, edit/checkpoint functionality
 - **Timeline** - Complete activity history (placeholder)
 - **Insights** - Conversation patterns and behavioral analysis (placeholder)
