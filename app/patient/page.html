@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memora - Talk With Me</title>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Merriweather', serif;
+            background: linear-gradient(135deg, #f5f3f0 0%, #e8f4f0 100%);
+            color: #2c3e50;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Floating background elements */
+        .bg-floaters {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .floater {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(107, 142, 127, 0.08);
+            animation: drift 15s infinite ease-in-out;
+        }
+
+        .floater:nth-child(1) {
+            width: 200px;
+            height: 200px;
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .floater:nth-child(2) {
+            width: 150px;
+            height: 150px;
+            top: 60%;
+            right: 15%;
+            animation-delay: 3s;
+        }
+
+        .floater:nth-child(3) {
+            width: 100px;
+            height: 100px;
+            bottom: 20%;
+            left: 30%;
+            animation-delay: 6s;
+        }
+
+        @keyframes drift {
+            0%, 100% { transform: translate(0, 0); }
+            25% { transform: translate(20px, -20px); }
+            50% { transform: translate(-15px, 15px); }
+            75% { transform: translate(15px, 10px); }
+        }
+
+        /* Header */
+        header {
+            position: relative;
+            z-index: 10;
+            padding: 24px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            transition: transform 0.3s ease;
+        }
+
+        .logo:hover {
+            transform: scale(1.05);
+        }
+
+        .logo svg {
+            width: 32px;
+            height: 32px;
+            animation: pulse 3s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+        }
+
+        .logo-text {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .settings-btn {
+            background: white;
+            border: none;
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            cursor: pointer;
+            color: #5a6c7d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        .settings-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+            color: #6b8e7f;
+        }
+
+        /* Main Container */
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+
+        /* Greeting */
+        .greeting {
+            text-align: center;
+            margin-bottom: 50px;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .greeting h1 {
+            font-size: 52px;
+            margin-bottom: 12px;
+            color: #2c3e50;
+            background: linear-gradient(135deg, #2c3e50 0%, #6b8e7f 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .greeting p {
+            font-size: 24px;
+            color: #5a6c7d;
+        }
+
+        /* Conversation Card */
+        .conversation-card {
+            background: white;
+            border-radius: 30px;
+            padding: 60px;
+            margin-bottom: 50px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            position: relative;
+            animation: slideUp 1s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .voice-icon-container {
+            position: relative;
+            width: 160px;
+            height: 160px;
+            margin: 0 auto 30px;
+        }
+
+        .voice-icon {
+            width: 160px;
+            height: 160px;
+            background: linear-gradient(135deg, #e8f4f0 0%, #d4e8e0 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.4s ease;
+            position: relative;
+        }
+
+        .voice-icon.active {
+            background: linear-gradient(135deg, #6b8e7f 0%, #547566 100%);
+            animation: pulse-ring 2s infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% {
+                box-shadow: 0 0 0 0 rgba(107, 142, 127, 0.7);
+            }
+            50% {
+                box-shadow: 0 0 0 30px rgba(107, 142, 127, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(107, 142, 127, 0);
+            }
+        }
+
+        .voice-icon svg {
+            width: 64px;
+            height: 64px;
+            transition: all 0.3s ease;
+        }
+
+        .voice-icon.active svg {
+            color: white;
+            animation: float 2s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .conversation-card h2 {
+            font-size: 32px;
+            margin-bottom: 16px;
+            color: #2c3e50;
+        }
+
+        .conversation-card > p {
+            color: #5a6c7d;
+            margin-bottom: 36px;
+            font-size: 18px;
+            line-height: 1.6;
+        }
+
+        /* Button */
+        .btn {
+            padding: 20px 60px;
+            border-radius: 50px;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            font-family: 'Merriweather', serif;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn:hover::before {
+            width: 400px;
+            height: 400px;
+        }
+
+        .btn span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6b8e7f 0%, #547566 100%);
+            color: white;
+            box-shadow: 0 8px 30px rgba(107, 142, 127, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 40px rgba(107, 142, 127, 0.5);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #d94848 0%, #c13939 100%);
+            color: white;
+            box-shadow: 0 8px 30px rgba(217, 72, 72, 0.4);
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 40px rgba(217, 72, 72, 0.5);
+        }
+
+        /* Transcript */
+        .transcript {
+            background: linear-gradient(135deg, #f8f8f7 0%, #f0f4f2 100%);
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 40px;
+            text-align: left;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            opacity: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.5s ease;
+        }
+
+        .transcript.visible {
+            opacity: 1;
+            max-height: 1000px;
+            animation: slideDown 0.5s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .transcript-message {
+            margin-bottom: 20px;
+            padding: 16px 20px;
+            border-radius: 16px;
+            animation: messageIn 0.4s ease;
+        }
+
+        @keyframes messageIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .transcript-message:last-child {
+            margin-bottom: 0;
+        }
+
+        .user-message {
+            background: white;
+            margin-left: auto;
+            max-width: 85%;
+        }
+
+        .assistant-message {
+            background: linear-gradient(135deg, #e8f4f0 0%, #d4e8e0 100%);
+            margin-right: auto;
+            max-width: 85%;
+        }
+
+        .transcript-message p {
+            margin: 0;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .transcript-message strong {
+            color: #2c3e50;
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+
+        /* Info Cards - Staggered Layout */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            opacity: 0;
+            animation: fadeIn 1s ease forwards 0.5s;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+            }
+        }
+
+        .info-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            animation: scaleIn 0.6s ease forwards;
+            opacity: 0;
+        }
+
+        .info-card:nth-child(1) {
+            animation-delay: 0.6s;
+            transform: translateY(20px);
+        }
+
+        .info-card:nth-child(2) {
+            animation-delay: 0.8s;
+            transform: translateY(20px);
+        }
+
+        .info-card:nth-child(3) {
+            animation-delay: 1s;
+            transform: translateY(20px);
+        }
+
+        @keyframes scaleIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .info-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+        }
+
+        .info-card h3 {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-card h3::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #6b8e7f;
+            display: inline-block;
+        }
+
+        .info-card ul {
+            list-style: none;
+        }
+
+        .info-card li {
+            margin-bottom: 14px;
+            color: #5a6c7d;
+            font-size: 15px;
+            line-height: 1.6;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .info-card li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: #6b8e7f;
+            font-size: 20px;
+            line-height: 1;
+        }
+
+        .info-card li:last-child {
+            margin-bottom: 0;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 24px;
+            }
+
+            .greeting h1 {
+                font-size: 36px;
+            }
+
+            .conversation-card {
+                padding: 40px 24px;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            header {
+                padding: 20px 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-floaters">
+        <div class="floater"></div>
+        <div class="floater"></div>
+        <div class="floater"></div>
+    </div>
+
+    <header>
+        <a href="#" class="logo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #6b8e7f;">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+            <span class="logo-text">Memora</span>
+        </a>
+        <button class="settings-btn" onclick="alert('Settings: Adjust voice speed, volume, and notifications')">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M12 1v6m0 6v6"></path>
+                <path d="M19.07 4.93l-4.24 4.24m-5.66 5.66L4.93 19.07"></path>
+                <path d="M19.07 19.07l-4.24-4.24M9.17 9.17L4.93 4.93"></path>
+            </svg>
+        </button>
+    </header>
+
+    <div class="container">
+        <div class="greeting">
+            <h1>Hello, John</h1>
+            <p>It's Tuesday, October 14th. How are you feeling today?</p>
+        </div>
+
+        <div class="conversation-card">
+            <div class="voice-icon-container">
+                <div class="voice-icon" id="voiceIcon">
+                    <svg id="phoneIcon" viewBox="0 0 24 24" fill="none" stroke-width="2" style="stroke: #6b8e7f;">
+                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                    </svg>
+                </div>
+            </div>
+            <h2 id="conversationTitle">Ready to chat?</h2>
+            <p id="conversationText">Press the button below to start talking with me. I'm here to listen and help.</p>
+            <button class="btn btn-primary" id="conversationBtn" onclick="toggleConversation()">
+                <span>Start Conversation</span>
+            </button>
+            
+            <div class="transcript" id="transcript"></div>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-card">
+                <h3>Today's Schedule</h3>
+                <ul>
+                    <li>8:00 AM - Medication taken ✓</li>
+                    <li>3:00 PM - Sarah visiting</li>
+                    <li>6:00 PM - Evening medication</li>
+                </ul>
+            </div>
+            <div class="info-card">
+                <h3>Quick Reminders</h3>
+                <ul>
+                    <li>You live with your daughter Sarah</li>
+                    <li>Your grandchildren are Emma and Michael</li>
+                    <li>You taught math at Lincoln High</li>
+                </ul>
+            </div>
+            <div class="info-card">
+                <h3>Recent Topics</h3>
+                <ul>
+                    <li>Garden roses blooming</li>
+                    <li>Emma's school play</li>
+                    <li>Tuesday crossword puzzle</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isConnected = false;
+        let messageCount = 0;
+        
+        const conversations = [
+            {
+                user: "What day is it?",
+                assistant: "Today is Tuesday, October 14th. Your daughter Sarah mentioned she'd visit this afternoon around 3 PM."
+            },
+            {
+                user: "When is Sarah coming?",
+                assistant: "Sarah is coming to visit at 3 PM this afternoon. She usually stays for dinner on Tuesdays. You might want to check on those roses in the garden before she arrives!"
+            },
+            {
+                user: "Did I take my medicine?",
+                assistant: "Yes, you took your morning medication at 8 AM today. Great job remembering! Your next dose is at 6 PM this evening."
+            },
+            {
+                user: "Tell me about my grandchildren.",
+                assistant: "You have two wonderful grandchildren! Emma is 8 years old and she has a school play coming up next week. Michael is 11 and loves when you help him with his math homework. They both adore spending time with you."
+            }
+        ];
+        
+        function toggleConversation() {
+            isConnected = !isConnected;
+            const icon = document.getElementById('voiceIcon');
+            const title = document.getElementById('conversationTitle');
+            const text = document.getElementById('conversationText');
+            const btn = document.getElementById('conversationBtn');
+            const transcript = document.getElementById('transcript');
+            
+            if (isConnected) {
+                icon.classList.add('active');
+                title.textContent = "I'm listening...";
+                text.textContent = "Go ahead and speak. I can hear you.";
+                btn.innerHTML = '<span>End Conversation</span>';
+                btn.className = "btn btn-danger";
+                
+                // Show first exchange after 2 seconds
+                setTimeout(() => {
+                    addMessage(0);
+                }, 2000);
+            } else {
+                icon.classList.remove('active');
+                title.textContent = "Ready to chat?";
+                text.textContent = "Press the button below to start talking with me. I'm here to listen and help.";
+                btn.innerHTML = '<span>Start Conversation</span>';
+                btn.className = "btn btn-primary";
+                transcript.classList.remove('visible');
+                transcript.innerHTML = '';
+                messageCount = 0;
+            }
+        }
+        
+        function addMessage(index) {
+            if (index >= conversations.length || !isConnected) return;
+            
+            const transcript = document.getElementById('transcript');
+            const conversation = conversations[index];
+            
+            if (index === 0) {
+                transcript.classList.add('visible');
+            }
+            
+            // Add user message
+            const userDiv = document.createElement('div');
+            userDiv.className = 'transcript-message user-message';
+            userDiv.innerHTML = `<p><strong>You:</strong> ${conversation.user}</p>`;
+            transcript.appendChild(userDiv);
+            
+            // Add assistant message after delay
+            setTimeout(() => {
+                const assistantDiv = document.createElement('div');
+                assistantDiv.className = 'transcript-message assistant-message';
+                assistantDiv.innerHTML = `<p><strong>Memora:</strong> ${conversation.assistant}</p>`;
+                transcript.appendChild(assistantDiv);
+                
+                messageCount = index;
+                
+                // Add next message if available
+                if (index < conversations.length - 1 && isConnected) {
+                    setTimeout(() => {
+                        addMessage(index + 1);
+                    }, 6000);
+                }
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
