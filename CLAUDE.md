@@ -16,7 +16,7 @@ Memora is a **frontend-only Next.js PWA prototype** for a dementia care companio
 **CRITICAL ARCHITECTURAL DECISION**: Memora has two distinct interfaces designed for different users:
 
 #### **Patient Interface** (`/patient`)
-- **User**: Dorothy H. (person with dementia)
+- **User**: John Smith (person with dementia)
 - **Purpose**: Supportive voice companion
 - **Features**:
   - Voice-first interaction (large, simple UI)
@@ -38,7 +38,7 @@ Memora is a **frontend-only Next.js PWA prototype** for a dementia care companio
   - Alert configuration and settings
 - **Why**: Caregivers need analytics to provide better care, but this data should NEVER be visible to the patient.
 
-**In Demo**: The dashboard shows "Ava Smith - Caregiver" in the sidebar, not "Dorothy H. - Patient". This emphasizes that caregivers use this interface, not patients.
+**In Demo**: The dashboard shows "Ava Smith - Caregiver" in the sidebar, not "John Smith - Patient". This emphasizes that caregivers use this interface, not patients.
 
 ## Development Commands
 
@@ -426,7 +426,7 @@ mcp__playwright__browser_console_messages({ onlyErrors: true })
 ### Visual Regression Checks
 After changes, verify:
 1. Sidebar extends full height on ALL pages (Home, Timeline, Insights, Memories, Settings)
-2. User section ("Dorothy H.") stays at bottom of sidebar
+2. User section ("Ava Smith - Caregiver") stays at bottom of sidebar
 3. Main content area is scrollable
 4. No horizontal scroll on page
 5. Logo and "MEMORA" text match between landing and dashboard

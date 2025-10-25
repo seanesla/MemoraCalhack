@@ -20,14 +20,14 @@ Memora is a **frontend-only PWA prototype** demonstrating a comprehensive dement
 
 Memora implements two distinct interfaces designed for different users:
 
-**🧑‍🦳 Patient Interface** (`/patient`) - For Dorothy (person with dementia):
+**Patient Interface** (`/patient`) - For John (person with dementia):
 - Voice-first companion with simple, supportive UI
 - Orientation cues: date, time, weather
 - "I'm here with you" reassuring language
 - **NO surveillance data** - preserves dignity
 - **NO cognitive metrics** - no shame or anxiety
 
-**👨‍⚕️ Caregiver Dashboard** (`/dashboard.html`) - For Ava (family caregiver):
+**Caregiver Dashboard** (`/dashboard.html`) - For Ava (family caregiver):
 - Analytics and monitoring tools
 - Timeline of events, alerts, activities
 - 3-tier memory system management
