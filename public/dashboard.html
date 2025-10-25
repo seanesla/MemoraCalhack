@@ -2268,9 +2268,9 @@
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
                         </svg>
                         <div class="card-label">Medications</div>
-                        <div class="card-value">2/3</div>
+                        <div class="card-value" id="med-count">2/3</div>
                         <div class="card-subtitle">Taken today</div>
-                        <div class="status-warning">Evening dose pending</div>
+                        <div class="status-warning" id="med-status">Evening dose pending</div>
                     </div>
                 </div>
 
@@ -2293,9 +2293,9 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                                 <div class="card-label">Activities</div>
-                                <div class="card-value">5</div>
+                                <div class="card-value" id="activity-count">5</div>
                                 <div class="card-subtitle">Completed today</div>
-                                <div class="status-good">On track</div>
+                                <div class="status-good" id="activity-status">On track</div>
                             </div>
 
                             <!-- Sleep Card -->
@@ -2304,9 +2304,9 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                                 </svg>
                                 <div class="card-label">Sleep Quality</div>
-                                <div class="card-value">7.5h</div>
+                                <div class="card-value" id="sleep-hours">7.5h</div>
                                 <div class="card-subtitle">Last night</div>
-                                <div class="status-good">Good rest</div>
+                                <div class="status-good" id="sleep-quality">Good rest</div>
                             </div>
 
                             <!-- Mood Card -->
@@ -3681,6 +3681,162 @@
 
         // Initialize Core Memory on page load
         loadCoreMemoryValues();
+
+        // ===== REAL API INTEGRATION =====
+        // DEMO: Using first patient in database. Production would fetch caregiver's patients.
+        const DEMO_PATIENT_ID = 'cmh6upi54000mpvxuxonmnisp';
+
+        /**
+         * Load all dashboard data from real APIs
+         */
+        async function loadDashboardData() {
+            console.log('Loading dashboard data from real APIs...');
+            
+            // Load all data in parallel for performance
+            await Promise.all([
+                loadMedications(),
+                loadActivities(),
+                loadSleep()
+            ]);
+
+            console.log('Dashboard data loaded successfully');
+        }
+
+        /**
+         * Load medications from /api/patients/[id]/medications/today
+         */
+        async function loadMedications() {
+            try {
+                const response = await fetch(`/api/patients/${DEMO_PATIENT_ID}/medications/today`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const { medications, stats } = await response.json();
+                
+                // Update count
+                const countEl = document.getElementById('med-count');
+                if (countEl) {
+                    countEl.textContent = `${stats.taken}/${stats.total}`;
+                }
+
+                // Update status message
+                const statusEl = document.getElementById('med-status');
+                if (statusEl) {
+                    if (stats.total === 0) {
+                        statusEl.textContent = 'No medications scheduled';
+                        statusEl.className = 'status-good';
+                    } else if (stats.pending > 0) {
+                        statusEl.textContent = `${stats.pending} dose${stats.pending > 1 ? 's' : ''} pending`;
+                        statusEl.className = 'status-warning';
+                    } else {
+                        statusEl.textContent = 'All doses taken';
+                        statusEl.className = 'status-good';
+                    }
+                }
+
+                console.log(`Medications loaded: ${stats.taken}/${stats.total}`);
+            } catch (error) {
+                console.error('Error loading medications:', error);
+                const countEl = document.getElementById('med-count');
+                if (countEl) countEl.textContent = 'Error';
+            }
+        }
+
+        /**
+         * Load daily activities from /api/patients/[id]/daily-activities/today
+         */
+        async function loadActivities() {
+            try {
+                const response = await fetch(`/api/patients/${DEMO_PATIENT_ID}/daily-activities/today`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const { activities, stats } = await response.json();
+                
+                // Update count
+                const countEl = document.getElementById('activity-count');
+                if (countEl) {
+                    countEl.textContent = stats.totalActivities.toString();
+                }
+
+                // Update status message
+                const statusEl = document.getElementById('activity-status');
+                if (statusEl) {
+                    if (stats.totalActivities === 0) {
+                        statusEl.textContent = 'No activities yet';
+                        statusEl.className = 'status-warning';
+                    } else if (stats.totalActivities >= 3) {
+                        statusEl.textContent = 'On track';
+                        statusEl.className = 'status-good';
+                    } else {
+                        statusEl.textContent = 'Below target';
+                        statusEl.className = 'status-warning';
+                    }
+                }
+
+                console.log(`Activities loaded: ${stats.totalActivities} (${stats.totalMinutes} min)`);
+            } catch (error) {
+                console.error('Error loading activities:', error);
+                const countEl = document.getElementById('activity-count');
+                if (countEl) countEl.textContent = 'Error';
+            }
+        }
+
+        /**
+         * Load sleep log from /api/patients/[id]/sleep-logs/today
+         */
+        async function loadSleep() {
+            try {
+                const response = await fetch(`/api/patients/${DEMO_PATIENT_ID}/sleep-logs/today`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const { sleepLog } = await response.json();
+                
+                // Update hours
+                const hoursEl = document.getElementById('sleep-hours');
+                if (hoursEl) {
+                    if (sleepLog && sleepLog.totalHours) {
+                        hoursEl.textContent = `${sleepLog.totalHours}h`;
+                    } else {
+                        hoursEl.textContent = 'No data';
+                    }
+                }
+
+                // Update quality status
+                const qualityEl = document.getElementById('sleep-quality');
+                if (qualityEl) {
+                    if (!sleepLog || !sleepLog.totalHours) {
+                        qualityEl.textContent = 'Not logged';
+                        qualityEl.className = 'status-warning';
+                    } else if (sleepLog.totalHours >= 7) {
+                        qualityEl.textContent = sleepLog.quality || 'Good rest';
+                        qualityEl.className = 'status-good';
+                    } else if (sleepLog.totalHours >= 5) {
+                        qualityEl.textContent = sleepLog.quality || 'Fair';
+                        qualityEl.className = 'status-warning';
+                    } else {
+                        qualityEl.textContent = sleepLog.quality || 'Poor';
+                        qualityEl.className = 'status-warning';
+                    }
+                }
+
+                console.log(`Sleep loaded: ${sleepLog ? sleepLog.totalHours + 'h' : 'No data'}`);
+            } catch (error) {
+                console.error('Error loading sleep:', error);
+                const hoursEl = document.getElementById('sleep-hours');
+                if (hoursEl) hoursEl.textContent = 'Error';
+            }
+        }
+
+        // Initialize dashboard data on page load
+        loadDashboardData();
     </script>
 </body>
 </html>
