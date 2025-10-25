@@ -461,9 +461,20 @@ Memora uses a **hybrid AI architecture** optimized for different use cases:
 - **Use case**: Up-to-date library documentation
 - **Why**: Ensures AI responses use latest API patterns
 - **Processes**:
-  - Retrieves current documentation for Groq, LiveKit, Deepgram, Letta
+  - Retrieves current documentation for Groq, LiveKit, Deepgram, Letta, ChromaDB
   - Provides code examples and best practices
   - Keeps AI integrations current
+
+#### **Letta + ChromaDB** - Persistent Memory Architecture
+- **Letta**: Stateful agent framework with 3-tier memory (Core, Archival, Alert)
+- **ChromaDB**: Vector database providing persistent storage for Letta's archival memory
+- **Use case**: Long-term memory with semantic search
+- **Why**: ChromaDB stores embeddings for Letta's archival tier, enabling semantic retrieval of past conversations
+- **Processes**:
+  - Letta manages memory tiers and agent state
+  - ChromaDB stores archival memory embeddings
+  - Semantic search over patient conversation history
+  - Pattern detection across long time periods
 
 ### Data Flow
 
@@ -474,8 +485,17 @@ Patient speaks → Deepgram (STT) → Claude Haiku (fast response) → LiveKit (
                                     ↓
                             Letta Memory Updates
                                     ↓
+                            ChromaDB (Vector Storage)
+                                    ↓
                             Caregiver Dashboard Insights
 ```
+
+**Memory Pipeline**:
+1. Conversation happens via Claude Haiku (real-time)
+2. Groq Kimi K2 analyzes conversation with 280k context window
+3. Letta updates 3-tier memory (Core, Archival, Alert)
+4. ChromaDB stores archival memory embeddings for semantic search
+5. Dashboard displays insights derived from memory analysis
 
 ## Known Issues & Limitations
 

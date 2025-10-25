@@ -73,10 +73,11 @@ Memora implements two distinct interfaces designed for different users:
 - **Context7** - Up-to-date documentation retrieval for AI integrations
 - **LiveKit** - Real-time voice communication
 - **Deepgram** - Speech-to-text processing
-- **Letta** - Persistent 3-tier memory management
+- **Letta** - Persistent 3-tier memory management (Core, Archival, Alert)
+- **ChromaDB** - Vector database for Letta's archival memory storage
 - **Clerk** - User authentication
 
-**Multi-Model Strategy**: Kimi K2 handles complex analysis with massive context (memory updates, pattern detection), while Claude Haiku provides instant conversational responses. This hybrid approach optimizes for both quality and speed.
+**Multi-Model Strategy**: Kimi K2 handles complex analysis with massive context (memory updates, pattern detection), while Claude Haiku provides instant conversational responses. Letta manages the 3-tier memory architecture with ChromaDB providing persistent vector storage for semantic search over long-term memories. This hybrid approach optimizes for both quality and speed.
 
 **Note**: Backend is not implemented. All features are simulated with mock data.
 
@@ -275,11 +276,15 @@ All full-height elements use `149.25vh` instead of `100vh` to compensate for sca
 ## Future Integration
 
 This frontend is designed to integrate with:
-- **Groq API** for fast LLM inference
+- **Groq API (Kimi K2)** for deep memory analysis with 280k context window
+- **Claude (Haiku 4.5)** for ultra-fast real-time patient conversations
 - **LiveKit** for real-time voice communication
 - **Deepgram** for speech-to-text
-- **Letta** for persistent memory management
+- **Letta** for persistent 3-tier memory management (Core, Archival, Alert)
+- **ChromaDB** for vector storage of Letta's archival memory embeddings
 - **Clerk** for user authentication
+
+**Memory Architecture**: Letta manages the 3-tier memory system while ChromaDB provides persistent vector storage for semantic search over long-term conversation history.
 
 See `CLAUDE.md` for detailed architecture documentation.
 
@@ -317,7 +322,7 @@ MIT License - see LICENSE file for details
 
 Built with care at **Cal Hacks 12.0**
 
-**Technologies**: Next.js • React • TypeScript • Tailwind CSS • Groq • LiveKit • Deepgram • Letta • Clerk
+**Technologies**: Next.js • React • TypeScript • Tailwind CSS • Groq • Claude • LiveKit • Deepgram • Letta • ChromaDB • Clerk
 
 ---
 
