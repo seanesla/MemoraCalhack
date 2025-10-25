@@ -431,46 +431,6 @@
       opacity: 0.7;
     }
 
-    /* Stats - oversized and dramatic */
-    .stats-section {
-      background: var(--ink);
-      color: var(--paper);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 4rem;
-      max-width: 1200px;
-      width: 100%;
-      padding: 4rem;
-    }
-
-    .stat {
-      text-align: center;
-    }
-
-    .stat-value {
-      font-size: clamp(6rem, 15vw, 12rem);
-      font-weight: 900;
-      line-height: 1;
-      font-family: 'Space Grotesk', sans-serif;
-      margin-bottom: 1rem;
-      letter-spacing: -0.05em;
-    }
-
-    .stat-label {
-      font-family: 'Inconsolata', monospace;
-      font-size: 0.875rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      opacity: 0.6;
-    }
-
     /* Comparison table - brutalist */
     .comparison-wrapper {
       max-width: 1400px;
@@ -698,11 +658,6 @@
         grid-template-columns: 1fr;
       }
 
-      .stats-grid {
-        grid-template-columns: 1fr;
-        gap: 3rem;
-      }
-
     }
 
     @media (max-width: 768px) {
@@ -865,28 +820,6 @@
                 </p>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Stats Section -->
-      <section class="stats-section">
-        <div class="stats-grid">
-          <div class="stat fade-up">
-            <div class="stat-value">7M</div>
-            <div class="stat-label">People asking the same questions every day</div>
-          </div>
-          <div class="stat fade-up">
-            <div class="stat-value">11M</div>
-            <div class="stat-label">Families watching memories fade</div>
-          </div>
-          <div class="stat fade-up">
-            <div class="stat-value">$300B</div>
-            <div class="stat-label">Spent on care that can't remember what matters</div>
-          </div>
-          <div class="stat fade-up">
-            <div class="stat-value">24/7</div>
-            <div class="stat-label">Hours of vigilance without rest</div>
           </div>
         </div>
       </section>
@@ -1088,27 +1021,6 @@
         ease: 'power2.out'
       }),
       start: 'top 85%'
-    });
-
-    // Stats counter animation
-    gsap.utils.toArray('.stat-value').forEach((stat) => {
-      const text = stat.textContent;
-      ScrollTrigger.create({
-        trigger: stat,
-        start: 'top 80%',
-        onEnter: () => {
-          gsap.from(stat, {
-            textContent: 0,
-            duration: 2,
-            ease: 'power1.inOut',
-            snap: { textContent: 1 },
-            onUpdate: function() {
-              stat.textContent = text;
-            }
-          });
-        },
-        once: true
-      });
     });
 
     // Smooth cursor follow (subtle)
