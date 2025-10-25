@@ -177,7 +177,7 @@
       top: 0;
       left: 0;
       right: 0;
-      padding: 2rem 4rem;
+      padding: 1rem 3rem;
       z-index: 10000;
       display: flex;
       justify-content: space-between;
@@ -190,22 +190,43 @@
     .logo {
       display: flex;
       align-items: center;
-      gap: 1rem;
+      gap: 0.75rem;
     }
 
     .logo img {
-      width: 96px;
-      height: 96px;
+      width: 48px;
+      height: 48px;
       opacity: 1;
       filter: invert(1) brightness(1.2);
     }
 
     .logo-text {
       font-family: 'Inconsolata', monospace;
-      font-size: 2.5rem;
+      font-size: 1.5rem;
       font-weight: 900;
       letter-spacing: 0.2em;
       text-transform: uppercase;
+      color: var(--ink);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2.5rem;
+      align-items: center;
+    }
+
+    .nav-link {
+      font-family: 'Inconsolata', monospace;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gray);
+      text-decoration: none;
+      transition: color 0.3s ease;
+      cursor: pointer;
+    }
+
+    .nav-link:hover {
       color: var(--ink);
     }
 
@@ -651,7 +672,15 @@
     /* Responsive */
     @media (max-width: 1024px) {
       nav {
-        padding: 2rem;
+        padding: 1rem 2rem;
+      }
+
+      .nav-links {
+        gap: 1.5rem;
+      }
+
+      .nav-link {
+        font-size: 0.7rem;
       }
 
       section {
@@ -698,6 +727,12 @@
       <img src="/memoralogo.svg" alt="Memora">
       <span class="logo-text">Memora</span>
     </div>
+    <div class="nav-links">
+      <a href="#memory" class="nav-link">Memory</a>
+      <a href="#voice" class="nav-link">Voice</a>
+      <a href="#features" class="nav-link">Features</a>
+      <a href="#difference" class="nav-link">Why Different</a>
+    </div>
     <div class="nav-auth">
       <a href="/sign-in" class="nav-auth-link">Sign In</a>
       <a href="/sign-up" class="nav-auth-btn">Sign Up</a>
@@ -723,7 +758,7 @@
       </section>
 
       <!-- Memory Section -->
-      <section>
+      <section id="memory">
         <div class="memory-vortex">
           <img src="/memory-vortex.png" alt="Memory Vortex">
         </div>
@@ -741,7 +776,7 @@
       </section>
 
       <!-- Voice Section -->
-      <section>
+      <section id="voice">
         <div class="content-wrapper reverse">
           <div data-speed="1.2">
             <p class="section-description fade-up">
@@ -769,7 +804,7 @@
       </section>
 
       <!-- Features Grid -->
-      <section>
+      <section id="features">
         <div class="comparison-wrapper">
           <div class="section-label fade-up">Core Capabilities</div>
           <h2 class="section-title fade-up">Built for meaningful connection</h2>
@@ -856,7 +891,7 @@
       </section>
 
       <!-- Story Section -->
-      <section>
+      <section id="difference">
         <div class="comparison-wrapper">
           <div class="section-label fade-up">The Difference</div>
           <h2 class="section-title fade-up">Purpose-built for dementia care</h2>
@@ -912,6 +947,22 @@
   
   <script>
     gsap.registerPlugin(ScrollTrigger);
+
+    // Smooth scroll navigation
+    document.querySelectorAll('.nav-link').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetId = link.getAttribute('href').substring(1);
+        const targetSection = document.getElementById(targetId);
+
+        if (targetSection) {
+          targetSection.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      });
+    });
 
     // Hero parallax
     gsap.to('.hero-title .parallax-fast', {
