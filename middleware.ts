@@ -19,7 +19,7 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
-import { prisma } from '@/lib/prisma';
+import { supabase } from '@/lib/supabase';
 
 // Public routes that don't require authentication
 const isPublicRoute = createRouteMatcher([
@@ -69,21 +69,23 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
 
   try {
     // Check if user is a patient
-    const patient = await prisma.patient.findUnique({
-      where: { clerkId: userId },
-      select: { id: true, clerkId: true },
-    });
+    const { data: patient, error: patientError } = await supabase
+      .from('patients')
+      .select('id, clerkId')
+      .eq('clerkId', userId)
+      .single();
 
-    if (patient) {
+    if (!patientError && patient) {
       userRole = 'patient';
     } else {
       // Check if user is a caregiver
-      const caregiver = await prisma.caregiver.findUnique({
-        where: { clerkId: userId },
-        select: { id: true, clerkId: true },
-      });
+      const { data: caregiver, error: caregiverError } = await supabase
+        .from('caregivers')
+        .select('id, clerkId')
+        .eq('clerkId', userId)
+        .single();
 
-      if (caregiver) {
+      if (!caregiverError && caregiver) {
         userRole = 'caregiver';
       }
     }
@@ -100,7 +102,7 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
       return NextResponse.redirect(new URL('/patient', request.url));
     }
     if (userRole === 'caregiver') {
-      return NextResponse.redirect(new URL('/caregiver', request.url));
+      return NextResponse.redirect(new URL('/dashboard.html', request.url));
     }
     // Not onboarded - allow access to onboarding
     return;
@@ -116,7 +118,7 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
   // Onboarded - check role-based access
   if (pathname.startsWith('/patient') && userRole !== 'patient') {
     // Non-patient trying to access /patient
-    const redirectUrl = userRole === 'caregiver' ? '/caregiver' : '/onboarding';
+    const redirectUrl = userRole === 'caregiver' ? '/dashboard.html' : '/onboarding';
     return NextResponse.redirect(new URL(redirectUrl, request.url));
   }
 
