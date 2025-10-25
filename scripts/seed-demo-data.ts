@@ -9,7 +9,7 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-const DEMO_PATIENT_ID = 'cmh6wwze500008o845ipehcnb';
+const DEMO_PATIENT_ID = 'cmh6xjz9q00008omek5epf02t';
 
 async function seedDemoData() {
   console.log('Seeding demo data for patient:', DEMO_PATIENT_ID);
