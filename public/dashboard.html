@@ -514,6 +514,63 @@
             font-weight: 600;
         }
 
+        /* Collapsible Sections */
+        .collapsible-section {
+            margin-top: 48px;
+        }
+
+        .section-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+            padding: 16px 0;
+            border-bottom: 2px solid #FFFFFF;
+            margin-bottom: 24px;
+            transition: opacity 0.2s ease;
+        }
+
+        .section-toggle:hover {
+            opacity: 0.8;
+        }
+
+        .section-toggle-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-chevron {
+            width: 24px;
+            height: 24px;
+            stroke: #FFFFFF;
+            transition: transform 0.3s ease;
+        }
+
+        .collapsible-section.collapsed .section-chevron {
+            transform: rotate(-90deg);
+        }
+
+        .section-content {
+            max-height: 5000px;
+            overflow: hidden;
+            transition: max-height 0.4s ease, opacity 0.4s ease;
+            opacity: 1;
+        }
+
+        .collapsible-section.collapsed .section-content {
+            max-height: 0;
+            opacity: 0;
+        }
+
+        /* Daily Metrics Grid */
+        .daily-metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
         .memory-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -2016,17 +2073,6 @@
                         </div>
                     </div>
 
-                    <!-- Activity Card -->
-                    <div class="card">
-                        <svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <div class="card-label">Activities</div>
-                        <div class="card-value">5</div>
-                        <div class="card-subtitle">Completed today</div>
-                        <div class="status-good">On track</div>
-                    </div>
-
                     <!-- Medications Card -->
                     <div class="card">
                         <svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2037,29 +2083,69 @@
                         <div class="card-subtitle">Taken today</div>
                         <div class="status-warning">Evening dose pending</div>
                     </div>
+                </div>
 
-                    <!-- Sleep Card -->
-                    <div class="card">
-                        <svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                        </svg>
-                        <div class="card-label">Sleep Quality</div>
-                        <div class="card-value">7.5h</div>
-                        <div class="card-subtitle">Last night</div>
-                        <div class="status-good">Good rest</div>
+                <!-- Daily Metrics Section (Collapsible) -->
+                <div class="collapsible-section collapsed" data-section="daily-metrics">
+                    <div class="section-toggle" onclick="toggleSection('daily-metrics')">
+                        <div class="section-toggle-left">
+                            <svg class="section-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                            <h2 class="section-title">Daily Metrics</h2>
+                        </div>
+                        <span class="section-badge">3 metrics</span>
                     </div>
+                    <div class="section-content">
+                        <div class="daily-metrics-grid">
+                            <!-- Activity Card -->
+                            <div class="card">
+                                <svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <div class="card-label">Activities</div>
+                                <div class="card-value">5</div>
+                                <div class="card-subtitle">Completed today</div>
+                                <div class="status-good">On track</div>
+                            </div>
 
-                    <!-- Mood Card -->
-                    <div class="card">
-                        <svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <div class="card-label">Mood</div>
-                        <div class="card-value">Cheerful</div>
-                        <div class="card-subtitle">All day</div>
+                            <!-- Sleep Card -->
+                            <div class="card">
+                                <svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                                </svg>
+                                <div class="card-label">Sleep Quality</div>
+                                <div class="card-value">7.5h</div>
+                                <div class="card-subtitle">Last night</div>
+                                <div class="status-good">Good rest</div>
+                            </div>
+
+                            <!-- Mood Card -->
+                            <div class="card">
+                                <svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <div class="card-label">Mood</div>
+                                <div class="card-value">Cheerful</div>
+                                <div class="card-subtitle">All day</div>
+                            </div>
+                        </div>
                     </div>
+                </div>
 
-                    <!-- AI Insights Card -->
+                <!-- Today's Insights Section (Collapsible) -->
+                <div class="collapsible-section" data-section="insights">
+                    <div class="section-toggle" onclick="toggleSection('insights')">
+                        <div class="section-toggle-left">
+                            <svg class="section-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                            <h2 class="section-title">Today's Insights</h2>
+                        </div>
+                    </div>
+                    <div class="section-content">
+                        <div class="dashboard-grid">
+                            <!-- AI Insights Card -->
                     <div class="insights-card">
                         <div class="insights-header">
                             <svg class="insights-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2080,16 +2166,24 @@
                                 <span class="insight-tag">Routine normal</span>
                             </div>
                         </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Memory Section -->
-                <div class="memory-section">
-                    <div class="section-header">
-                        <h2 class="section-title">Recent Memory Moments</h2>
+                <!-- Recent Memories Section (Collapsible) -->
+                <div class="collapsible-section" data-section="memories">
+                    <div class="section-toggle" onclick="toggleSection('memories')">
+                        <div class="section-toggle-left">
+                            <svg class="section-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                            <h2 class="section-title">Recent Memory Moments</h2>
+                        </div>
                         <span class="section-badge">4 today</span>
                     </div>
-                    <div class="memory-grid">
+                    <div class="section-content">
+                        <div class="memory-grid">
                         <div class="memory-card">
                             <div class="memory-time">Today at 2:15 PM</div>
                             <div class="memory-quote">I remember when Sarah was just learning to walk...</div>
@@ -2104,6 +2198,7 @@
                             <div class="memory-time">Today at 8:00 AM</div>
                             <div class="memory-quote">Oh yes, it's Friday! Book club is tomorrow</div>
                             <div class="memory-context">Morning routine. He showed strong time awareness.</div>
+                        </div>
                         </div>
                     </div>
                 </div>
@@ -2937,6 +3032,33 @@
                 // Log for debugging
                 console.log('Navigated to:', pageName);
             });
+        });
+
+        // Progressive Disclosure: Collapsible Sections
+        function toggleSection(sectionName) {
+            const section = document.querySelector(`[data-section="${sectionName}"]`);
+            if (!section) return;
+
+            section.classList.toggle('collapsed');
+
+            // Save state to localStorage
+            const collapsed = section.classList.contains('collapsed');
+            localStorage.setItem(`section-${sectionName}-collapsed`, collapsed);
+        }
+
+        // Restore collapsed states from localStorage on page load
+        document.querySelectorAll('.collapsible-section').forEach(section => {
+            const sectionName = section.dataset.section;
+            const savedState = localStorage.getItem(`section-${sectionName}-collapsed`);
+
+            // If no saved state, use default from HTML (daily-metrics starts collapsed)
+            if (savedState !== null) {
+                if (savedState === 'true') {
+                    section.classList.add('collapsed');
+                } else {
+                    section.classList.remove('collapsed');
+                }
+            }
         });
 
         // User menu toggle
