@@ -222,8 +222,14 @@
 }
 
 .roleIcon {
-  font-size: 3rem;
   margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.roleIcon svg {
+  color: #d4a574;
 }
 
 .roleTitle {
