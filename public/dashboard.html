@@ -297,6 +297,86 @@
             color: #FFFFFF;
         }
 
+        /* Consent Notifications */
+        .consent-notifications {
+            background: rgba(255, 152, 0, 0.08);
+            border: 2px solid #FF9800;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 32px;
+        }
+
+        .notification-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .notification-header svg {
+            width: 24px;
+            height: 24px;
+            color: #FF9800;
+            flex-shrink: 0;
+        }
+
+        .notification-header h3 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #FF9800;
+            margin: 0;
+        }
+
+        .notification-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .consent-notification {
+            display: flex;
+            gap: 16px;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 6px;
+            border-left: 4px solid #FF9800;
+        }
+
+        .notification-icon {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+            color: #FF9800;
+        }
+
+        .notification-icon svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .notification-content {
+            flex: 1;
+        }
+
+        .notification-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #FFFFFF;
+            margin-bottom: 4px;
+        }
+
+        .notification-time {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 8px;
+        }
+
+        .notification-impact {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.85);
+            line-height: 1.5;
+        }
+
         /* Dashboard Grid */
         .dashboard-grid {
             display: grid;
@@ -2017,6 +2097,59 @@
                 <div class="page-header">
                     <h1 class="page-title">Today's Overview</h1>
                     <p class="page-subtitle">Friday, October 24, 2025</p>
+                </div>
+
+                <!-- Consent Notifications -->
+                <div class="consent-notifications">
+                    <div class="notification-header">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <h3>Privacy Consent Updates</h3>
+                    </div>
+                    <div class="notification-list">
+                        <!-- Notification 1: Location disabled -->
+                        <div class="consent-notification">
+                            <div class="notification-icon">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                            </div>
+                            <div class="notification-content">
+                                <div class="notification-title">John chose to disable Location Tracking</div>
+                                <div class="notification-time">2 hours ago (2:45 PM)</div>
+                                <div class="notification-impact">Impact: Walking Monitoring alerts will not function while this is disabled. John can re-enable this at any time via his privacy controls.</div>
+                            </div>
+                        </div>
+
+                        <!-- Notification 2: Conversations disabled yesterday -->
+                        <div class="consent-notification">
+                            <div class="notification-icon">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                            </div>
+                            <div class="notification-content">
+                                <div class="notification-title">John chose to disable Conversation Recording</div>
+                                <div class="notification-time">Yesterday at 3:15 PM</div>
+                                <div class="notification-impact">Impact: The AI will not remember what John says. Context and continuity in conversations will be limited. Memory system updates will be paused.</div>
+                            </div>
+                        </div>
+
+                        <!-- Notification 3: Medication re-enabled -->
+                        <div class="consent-notification">
+                            <div class="notification-icon">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <div class="notification-content">
+                                <div class="notification-title">John re-enabled Medication Reminders</div>
+                                <div class="notification-time">3 days ago</div>
+                                <div class="notification-impact">Medication tracking and reminders are now active again.</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="dashboard-grid">
