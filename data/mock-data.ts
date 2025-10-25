@@ -81,20 +81,6 @@ export const mockCareState: CareState = {
       }
     },
     {
-      id: "evt-004",
-      timestamp: formatISO(subHours(now, 2)),
-      type: "sensor_alert",
-      severity: "critical",
-      summary: "Fall detection resolved",
-      details: {
-        sensorData: {
-          accelerationPeak: "2.4 g",
-          stillnessDurationSeconds: 37
-        },
-        followUpAction: "Caregiver phoned. Patient confirmed no injury."
-      }
-    },
-    {
       id: "evt-005",
       timestamp: formatISO(subHours(now, 3)),
       type: "memory_update",
@@ -171,23 +157,8 @@ export const mockCareState: CareState = {
       tags: ["routine", "nature", "memory-cue"],
       tone: "reflective"
     },
-    {
-      id: "arch-003",
-      createdAt: formatISO(subHours(now, 12)),
-      title: "Safety escalation follow-through",
-      summary:
-        "Documented fall detection event, caregiver follow-up, and John's feedback about new motion sensor sensitivity.",
-      tags: ["safety", "insight"],
-      tone: "alert"
-    }
   ],
   alerts: {
-    fallDetection: {
-      enabled: true,
-      sensitivity: "medium",
-      escalationDelaySeconds: 45,
-      channels: ["sms", "push"]
-    },
     wanderingDetection: {
       enabled: true,
       safeRadiusMeters: 110,

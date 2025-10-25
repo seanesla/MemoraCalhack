@@ -2242,36 +2242,6 @@
                         </div>
                     </div>
 
-                    <!-- Event 4: Fall Detection -->
-                    <div class="timeline-event">
-                        <div class="timeline-dot severity-critical">
-                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
-                        <div class="timeline-connector"></div>
-                        <div class="timeline-event-card severity-critical">
-                            <div class="event-header">
-                                <div class="event-title-section">
-                                    <div class="event-type">Safety Check</div>
-                                    <div class="event-summary">Motion sensor detected a fall - John confirmed he's okay</div>
-                                </div>
-                                <div class="event-timestamp">2 hours ago</div>
-                            </div>
-                            <div class="event-details">
-                                <div class="event-details-item">
-                                    <span class="event-details-label">Acceleration Peak:</span> 2.4 g
-                                </div>
-                                <div class="event-details-item">
-                                    <span class="event-details-label">Stillness Duration:</span> 37 seconds
-                                </div>
-                                <div class="event-details-item">
-                                    <span class="event-details-label">Follow-up:</span> Caregiver phoned. Patient confirmed no injury.
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Event 5: Memory Update -->
                     <div class="timeline-event">
                         <div class="timeline-dot severity-info">
@@ -2605,19 +2575,6 @@
                             </div>
                         </div>
 
-                        <div class="archival-memory-card">
-                            <div class="archival-header">
-                                <span class="archival-title">Safety escalation follow-through</span>
-                                <span class="archival-date">12 hours ago</span>
-                            </div>
-                            <div class="archival-summary">
-                                Documented fall detection event, caregiver follow-up, and John's feedback about new motion sensor sensitivity.
-                            </div>
-                            <div class="archival-tags">
-                                <span class="archival-tag">safety</span>
-                                <span class="archival-tag">insight</span>
-                            </div>
-                        </div>
                     </div>
                 </div>
 
@@ -2628,19 +2585,6 @@
                         <span class="section-badge">Active Monitoring</span>
                     </div>
                     <div class="memory-grid">
-                        <div class="alert-card enabled">
-                            <div class="alert-header">
-                                <span class="alert-name">Fall Safety</span>
-                                <span class="alert-status enabled">ENABLED</span>
-                            </div>
-                            <div class="alert-details">
-                                Monitors movement to help keep John safe from falls.
-                            </div>
-                            <div class="alert-config">
-                                Sensitivity: Medium • Escalation Delay: 45s • Channels: SMS, Push
-                            </div>
-                        </div>
-
                         <div class="alert-card enabled">
                             <div class="alert-header">
                                 <span class="alert-name">Walking Monitoring</span>
@@ -2684,39 +2628,6 @@
                             <h2 class="settings-title">Alert Configuration</h2>
                         </div>
                         <p class="settings-description">Configure how and when you receive alerts about the patient's activities.</p>
-
-                        <!-- Fall Detection -->
-                        <div class="alert-config-card">
-                            <div class="alert-config-header">
-                                <h3 class="alert-config-name">Fall Safety</h3>
-                                <div class="toggle-switch enabled"></div>
-                            </div>
-                            <div class="config-row">
-                                <span class="config-label">Sensitivity</span>
-                                <span class="config-value">Medium</span>
-                            </div>
-                            <div class="config-row">
-                                <span class="config-label">Escalation Delay</span>
-                                <span class="config-value">45 seconds</span>
-                            </div>
-                            <div class="config-row">
-                                <span class="config-label">Notification Channels</span>
-                            </div>
-                            <div class="channel-checkboxes">
-                                <div class="channel-checkbox checked">
-                                    <div class="checkbox-icon"></div>
-                                    <span>Text Message</span>
-                                </div>
-                                <div class="channel-checkbox">
-                                    <div class="checkbox-icon"></div>
-                                    <span>Email</span>
-                                </div>
-                                <div class="channel-checkbox checked">
-                                    <div class="checkbox-icon"></div>
-                                    <span>Push Notification</span>
-                                </div>
-                            </div>
-                        </div>
 
                         <!-- Wandering Detection -->
                         <div class="alert-config-card">
@@ -3051,8 +2962,6 @@
             'Walking Monitoring': 'Walking check',
             'Activity Pattern Monitoring': 'Daily Routine Tracking',
             'Daily Routine Tracking': 'Daily routine check',
-            'Fall Detection': 'Fall Safety',
-            'Fall Safety': 'Fall safety check',
             'quiet hours': 'nighttime',
             'outside quiet hours': 'during the day',
             'safe radius': 'safe area',

@@ -250,8 +250,6 @@ The application prioritizes visual design and interaction patterns that work wel
 8. **Jargon-Heavy Technical Terminology**
    - "Leqembi" (medication name, shown without context)
    - "Safe radius: 110m" (requires spatial reasoning)
-   - "Acceleration Peak: 2.4 g" (physics jargon for fall detection)
-   - "Stillness Duration: 37 seconds" (technical measurement)
    - "Confidence: 73%" (statistical jargon)
 
 9. **Missing Form Labels and Instructions**
@@ -396,11 +394,11 @@ Memora is **entirely mock data** with hardcoded responses:
 
 **Alert Configuration (Tier 3):**
 ```typescript
-fallDetection: {
+wanderingDetection: {
   enabled: true,
-  sensitivity: "medium",
-  escalationDelaySeconds: 45,
-  channels: ["sms", "push"]
+  safeRadiusMeters: 110,
+  quietHours: { start: "21:00", end: "06:00" },
+  channels: ["sms", "email"]
 }
 ```
 - **Purpose:** Safety monitoring configuration

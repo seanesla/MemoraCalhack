@@ -24,7 +24,7 @@ Memora is a **frontend-only Next.js PWA prototype** for a dementia care companio
   - "I'm here with you" reassuring language
   - NO surveillance data shown
   - NO cognitive performance metrics
-  - NO wandering alerts or fall detection events
+  - NO wandering alerts or location tracking events
 - **Why**: Showing a dementia patient their own "engagement scores" or "wandering alerts" is **shame-inducing and harmful**. The patient interface preserves dignity.
 
 #### **Caregiver Dashboard** (`/dashboard.html`)

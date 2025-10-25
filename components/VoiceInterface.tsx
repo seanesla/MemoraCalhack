@@ -18,7 +18,16 @@ export default function VoiceInterface() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [hasSpokenWelcome, setHasSpokenWelcome] = useState(false);
   const [coreMemory, setCoreMemory] = useState<MemoraCoreMemory | null>(null);
+  const [showPrivacy, setShowPrivacy] = useState(false);
   const synthRef = useRef<SpeechSynthesis | null>(null);
+
+  // Privacy settings state
+  const [privacySettings, setPrivacySettings] = useState({
+    conversations: true,
+    location: true,
+    medicationTracking: true,
+    activityMonitoring: true
+  });
 
   // Initialize speech synthesis
   useEffect(() => {
@@ -198,18 +207,178 @@ export default function VoiceInterface() {
     }
   };
 
+  const togglePrivacySetting = (setting: keyof typeof privacySettings) => {
+    setPrivacySettings(prev => ({
+      ...prev,
+      [setting]: !prev[setting]
+    }));
+
+    // In real implementation, this would notify the caregiver
+    console.log(`Privacy setting changed: ${setting} = ${!privacySettings[setting]}`);
+  };
+
   return (
     <div className="voice-interface">
-      {/* Home button - always visible */}
-      <a href="/" className="home-button">
-        <svg className="home-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-        </svg>
-        <span className="home-label">Home</span>
-      </a>
+      {/* Top navigation */}
+      <div className="top-nav">
+        <a href="/" className="nav-button">
+          <svg className="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+          <span className="nav-label">Home</span>
+        </a>
+
+        {!showPrivacy && (
+          <button onClick={() => setShowPrivacy(true)} className="nav-button">
+            <svg className="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <span className="nav-label">My Data</span>
+          </button>
+        )}
+
+        {showPrivacy && (
+          <button onClick={() => setShowPrivacy(false)} className="nav-button">
+            <svg className="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            <span className="nav-label">Close</span>
+          </button>
+        )}
+      </div>
+
+      {/* Privacy Dashboard */}
+      {showPrivacy && (
+        <div className="privacy-dashboard">
+          <div className="privacy-header">
+            <h1 className="privacy-title">What We Track About You</h1>
+            <p className="privacy-subtitle">You control your data. Turn off anything you're not comfortable with.</p>
+          </div>
+
+          <div className="privacy-controls">
+            {/* Conversations */}
+            <div className="privacy-item">
+              <div className="privacy-item-header">
+                <div className="privacy-item-info">
+                  <h3 className="privacy-item-title">Conversations</h3>
+                  <p className="privacy-item-description">
+                    Records what you say to help remember context and provide better responses
+                  </p>
+                </div>
+                <label className="privacy-toggle">
+                  <input
+                    type="checkbox"
+                    checked={privacySettings.conversations}
+                    onChange={() => togglePrivacySetting('conversations')}
+                  />
+                  <span className="toggle-slider"></span>
+                </label>
+              </div>
+              {!privacySettings.conversations && (
+                <div className="privacy-warning">
+                  <svg className="warning-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <span>Ava will be notified. I won't remember our conversations.</span>
+                </div>
+              )}
+            </div>
+
+            {/* Location */}
+            <div className="privacy-item">
+              <div className="privacy-item-header">
+                <div className="privacy-item-info">
+                  <h3 className="privacy-item-title">Location Tracking</h3>
+                  <p className="privacy-item-description">
+                    Tracks where you are to detect if you wander outside safe areas
+                  </p>
+                </div>
+                <label className="privacy-toggle">
+                  <input
+                    type="checkbox"
+                    checked={privacySettings.location}
+                    onChange={() => togglePrivacySetting('location')}
+                  />
+                  <span className="toggle-slider"></span>
+                </label>
+              </div>
+              {!privacySettings.location && (
+                <div className="privacy-warning">
+                  <svg className="warning-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <span>Ava will be notified. Wandering alerts will be disabled.</span>
+                </div>
+              )}
+            </div>
+
+            {/* Medication */}
+            <div className="privacy-item">
+              <div className="privacy-item-header">
+                <div className="privacy-item-info">
+                  <h3 className="privacy-item-title">Medication Reminders</h3>
+                  <p className="privacy-item-description">
+                    Tracks when you take medication and sends reminders
+                  </p>
+                </div>
+                <label className="privacy-toggle">
+                  <input
+                    type="checkbox"
+                    checked={privacySettings.medicationTracking}
+                    onChange={() => togglePrivacySetting('medicationTracking')}
+                  />
+                  <span className="toggle-slider"></span>
+                </label>
+              </div>
+              {!privacySettings.medicationTracking && (
+                <div className="privacy-warning">
+                  <svg className="warning-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <span>Ava will be notified. You won't receive medication reminders.</span>
+                </div>
+              )}
+            </div>
+
+            {/* Activity */}
+            <div className="privacy-item">
+              <div className="privacy-item-header">
+                <div className="privacy-item-info">
+                  <h3 className="privacy-item-title">Activity Monitoring</h3>
+                  <p className="privacy-item-description">
+                    Tracks your daily activities to notice changes in routine
+                  </p>
+                </div>
+                <label className="privacy-toggle">
+                  <input
+                    type="checkbox"
+                    checked={privacySettings.activityMonitoring}
+                    onChange={() => togglePrivacySetting('activityMonitoring')}
+                  />
+                  <span className="toggle-slider"></span>
+                </label>
+              </div>
+              {!privacySettings.activityMonitoring && (
+                <div className="privacy-warning">
+                  <svg className="warning-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <span>Activity pattern alerts will be disabled.</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="privacy-footer">
+            <p className="privacy-note">
+              All changes notify Ava. Your safety matters, but so does your autonomy.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Idle state: Show circle button */}
-      {state === 'idle' && (
+      {!showPrivacy && state === 'idle' && (
         <div className="interaction-container">
           {/* Welcome message */}
           <div className="welcome-message">
@@ -247,7 +416,7 @@ export default function VoiceInterface() {
       )}
 
       {/* Active state: Show chat interface */}
-      {state !== 'idle' && (
+      {!showPrivacy && state !== 'idle' && (
         <div className="chat-interface">
           <div className="chat-messages">
             {/* User message */}
@@ -674,11 +843,17 @@ export default function VoiceInterface() {
           }
         }
 
-        /* Home button */
-        .home-button {
+        /* Top navigation */
+        .top-nav {
           position: fixed;
           top: 2rem;
           left: 2rem;
+          display: flex;
+          gap: 1rem;
+          z-index: 100;
+        }
+
+        .nav-button {
           display: flex;
           align-items: center;
           gap: 0.5rem;
@@ -688,28 +863,28 @@ export default function VoiceInterface() {
           background: rgba(10, 10, 10, 0.8);
           backdrop-filter: blur(10px);
           text-decoration: none;
+          cursor: pointer;
           transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
-          z-index: 100;
         }
 
-        .home-button:hover {
+        .nav-button:hover {
           border-color: rgba(212, 165, 116, 0.6);
           background: rgba(10, 10, 10, 0.95);
-          transform: translateX(-2px);
+          transform: translateY(-1px);
         }
 
-        .home-icon {
+        .nav-icon {
           width: 18px;
           height: 18px;
           color: rgba(212, 165, 116, 0.7);
           transition: color 0.3s cubic-bezier(0.23, 1, 0.32, 1);
         }
 
-        .home-button:hover .home-icon {
+        .nav-button:hover .nav-icon {
           color: rgba(212, 165, 116, 0.9);
         }
 
-        .home-label {
+        .nav-label {
           font-family: 'Inconsolata', monospace;
           font-size: 0.75rem;
           font-weight: 600;
@@ -719,8 +894,171 @@ export default function VoiceInterface() {
           transition: color 0.3s cubic-bezier(0.23, 1, 0.32, 1);
         }
 
-        .home-button:hover .home-label {
+        .nav-button:hover .nav-label {
           color: rgba(212, 165, 116, 0.9);
+        }
+
+        /* Privacy Dashboard */
+        .privacy-dashboard {
+          position: relative;
+          z-index: 10;
+          width: 100%;
+          max-width: 800px;
+          padding: 2rem;
+        }
+
+        .privacy-header {
+          text-align: center;
+          margin-bottom: 3rem;
+        }
+
+        .privacy-title {
+          font-family: 'Literata', Georgia, serif;
+          font-size: 2.5rem;
+          font-weight: 400;
+          color: #fafaf6;
+          margin-bottom: 1rem;
+          letter-spacing: 0.02em;
+        }
+
+        .privacy-subtitle {
+          font-family: 'Literata', Georgia, serif;
+          font-size: 1.125rem;
+          font-weight: 300;
+          color: rgba(250, 250, 246, 0.6);
+          letter-spacing: 0.02em;
+        }
+
+        .privacy-controls {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 1.5rem;
+        }
+
+        .privacy-item {
+          padding: 1.5rem;
+          border: 1px solid rgba(212, 165, 116, 0.2);
+          border-radius: 4px;
+          background: rgba(212, 165, 116, 0.03);
+        }
+
+        .privacy-item-header {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+        }
+
+        .privacy-item-info {
+          flex: 1;
+        }
+
+        .privacy-item-title {
+          font-family: 'Inconsolata', monospace;
+          font-size: 1rem;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+          color: #fafaf6;
+          margin-bottom: 0.5rem;
+        }
+
+        .privacy-item-description {
+          font-family: 'Literata', Georgia, serif;
+          font-size: 0.938rem;
+          line-height: 1.6;
+          color: rgba(250, 250, 246, 0.7);
+        }
+
+        /* Toggle Switch */
+        .privacy-toggle {
+          position: relative;
+          display: inline-block;
+          width: 52px;
+          height: 28px;
+          flex-shrink: 0;
+          align-self: flex-start;
+        }
+
+        .privacy-toggle input {
+          opacity: 0;
+          width: 0;
+          height: 0;
+        }
+
+        .toggle-slider {
+          position: absolute;
+          cursor: pointer;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: rgba(250, 250, 246, 0.2);
+          transition: 0.3s;
+          border-radius: 28px;
+          border: 1px solid rgba(250, 250, 246, 0.3);
+        }
+
+        .toggle-slider:before {
+          position: absolute;
+          content: "";
+          height: 20px;
+          width: 20px;
+          left: 3px;
+          bottom: 3px;
+          background-color: #fafaf6;
+          transition: 0.3s;
+          border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+          background-color: rgba(212, 165, 116, 0.3);
+          border-color: rgba(212, 165, 116, 0.6);
+        }
+
+        input:checked + .toggle-slider:before {
+          transform: translateX(24px);
+          background-color: #d4a574;
+        }
+
+        /* Privacy Warning */
+        .privacy-warning {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          margin-top: 1rem;
+          padding: 1rem;
+          border-radius: 4px;
+          background: rgba(255, 152, 0, 0.08);
+          border: 1px solid rgba(255, 152, 0, 0.2);
+        }
+
+        .warning-icon {
+          width: 20px;
+          height: 20px;
+          color: #FF9800;
+          flex-shrink: 0;
+        }
+
+        .privacy-warning span {
+          font-family: 'Literata', Georgia, serif;
+          font-size: 0.875rem;
+          color: rgba(250, 250, 246, 0.8);
+          line-height: 1.5;
+        }
+
+        .privacy-footer {
+          margin-top: 2rem;
+          padding-top: 2rem;
+          border-top: 1px solid rgba(212, 165, 116, 0.2);
+          text-align: center;
+        }
+
+        .privacy-note {
+          font-family: 'Literata', Georgia, serif;
+          font-size: 1rem;
+          font-style: italic;
+          color: rgba(250, 250, 246, 0.6);
+          line-height: 1.6;
         }
 
         /* Ambient context display - monospace like landing page UI */
@@ -788,6 +1126,18 @@ export default function VoiceInterface() {
 
           .invitation-text {
             font-size: 1.25rem;
+          }
+
+          .privacy-controls {
+            grid-template-columns: 1fr;
+          }
+
+          .top-nav {
+            gap: 0.5rem;
+          }
+
+          .nav-button {
+            padding: 0.5rem 0.875rem;
           }
         }
 

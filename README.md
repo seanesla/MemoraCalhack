@@ -191,7 +191,7 @@ npm run prepare  # Generate Tailwind CSS
 All demo data is in `data/mock-data.ts`. Contains:
 - Patient profile (John Smith, 72, early-stage Alzheimer's)
 - 4 sensors with status (accelerometer, geolocation, microphone, app activity)
-- 5 timeline events (medication reminder, wandering alert, fall detection, etc.)
+- 4 timeline events (medication reminder, wandering alert, memory update, etc.)
 - Conversation insights (frequent questions, mood, concerns)
 - 3-tier memory blocks (core, archival, alerts)
 
@@ -219,7 +219,6 @@ Visualized on **Memories** page in dashboard:
 - Searchable archive of interactions
 
 **Tier 3 - Alert Configuration** (Green status):
-- Fall Detection
 - Wandering Detection
 - Activity Pattern Monitoring
 

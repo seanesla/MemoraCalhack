@@ -26,7 +26,6 @@ export const jargonMap: Record<string, string> = {
   'Memory Update': 'New memory note',
   'Wandering Detection': 'Walking monitor',
   'Activity Pattern Monitoring': 'Daily routine check',
-  'Fall Detection': 'Fall safety check',
 
   // Time/location
   'quiet hours': 'nighttime',

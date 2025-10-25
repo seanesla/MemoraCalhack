@@ -91,7 +91,6 @@ export interface AlertConfig {
 }
 
 export interface Alerts {
-  fallDetection: AlertConfig;
   wanderingDetection: AlertConfig;
   activityPatterns: AlertConfig;
 }
