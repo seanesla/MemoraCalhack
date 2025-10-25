@@ -53,7 +53,6 @@ Memora implements two distinct interfaces designed for different users:
 - **Insights** - Conversation patterns and behavioral analysis (placeholder)
 - **Memory System** - Three-tier memory visualization with Core Memory, Archival Memory, and Alert Configuration
 - **Settings** - Alert and notification management (placeholder)
-- **Accessibility** - Jargon simplification toggle, Read Aloud feature for elderly caregivers
 
 ---
 
@@ -235,12 +234,18 @@ Visualized on **Memories** page in dashboard:
 - **Typography** - Inter (UI), Inconsolata (logo/monospace), Space Grotesk/Literata (landing)
 - **Generous whitespace** - Large touch targets, clear hierarchy
 
+### Landing Page Navigation
+- **Compact header** - Reduced height (1rem padding) with 48px logo
+- **Section navigation** - Center navigation bar with clickable section links (Memory, Voice, Features, Why Different)
+- **Smooth scrolling** - Native `scrollIntoView` API for animated section jumps
+- **Responsive design** - Navigation adapts to screen sizes
+
 ### Accessibility First
-- High contrast text (WCAG AAA)
-- Large touch targets (min 44px)
-- Simple navigation patterns
-- Voice-first interaction model
-- No complex gestures required
+- **High contrast text** - WCAG AAA compliant (verified contrast ratios: Orange #FF9800: 9.61:1, Gold #FFB74D: 12.32:1, Green #4CAF50: 7.80:1)
+- **Large touch targets** - Minimum 44px
+- **Simple navigation patterns** - Intuitive section-based navigation
+- **Voice-first interaction model** - Patient interface prioritizes voice over text
+- **No complex gestures required** - Single taps and simple interactions only
 
 ---
 
@@ -260,16 +265,16 @@ The application uses two systems:
 - Root redirect (`/`)
 
 ### Dashboard Scale Transform
-Dashboard uses `transform: scale(0.67)` on body for visual sizing:
+Dashboard uses `transform: scale(0.8)` on body for visual sizing:
 ```css
 body {
-  transform: scale(0.67);
+  transform: scale(0.8);
   transform-origin: top left;
-  width: 149.25%;   /* 100% / 0.67 */
-  height: 149.25%;  /* 100% / 0.67 */
+  width: 125%;   /* 100% / 0.8 */
+  height: 125%;  /* 100% / 0.8 */
 }
 ```
-All full-height elements use `149.25vh` instead of `100vh` to compensate for scaling.
+All full-height elements use `125vh` instead of `100vh` to compensate for scaling.
 
 ---
 

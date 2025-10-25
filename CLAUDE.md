@@ -91,7 +91,7 @@ Single HTML file containing:
 - JavaScript-in-`<script>` for page navigation
 - All fonts loaded via Google Fonts CDN
 
-**Critical CSS Pattern - `transform: scale(0.67)` on body:**
+**Critical CSS Pattern - `transform: scale(0.8)` on body:**
 
 ```css
 html {
@@ -101,34 +101,34 @@ html {
 }
 
 body {
-  transform: scale(0.67);
+  transform: scale(0.8);
   transform-origin: top left;
-  width: 149.25%;     /* 100% / 0.67 */
-  height: 149.25%;    /* 100% / 0.67 */
+  width: 125%;        /* 100% / 0.8 */
+  height: 125%;       /* 100% / 0.8 */
   overflow: hidden;   /* CRITICAL: Prevents page scrolling */
 }
 
 .dashboard-container {
-  height: 149.25vh;   /* NOT 100vh - compensates for scale */
+  height: 125vh;      /* NOT 100vh - compensates for scale */
   overflow: hidden;
 }
 
 .sidebar {
-  height: 149.25vh;   /* NOT 100vh */
+  height: 125vh;      /* NOT 100vh */
   overflow: hidden;   /* Sidebar must NOT scroll */
 }
 
 .main-content {
-  height: 149.25vh;   /* NOT 100vh */
+  height: 125vh;      /* NOT 100vh */
   overflow-y: auto;   /* ONLY main content scrolls */
 }
 ```
 
-**Why 149.25vh?**
-- Body is scaled to 0.67 of its layout size
-- 100vh in layout space becomes 67vh visually after scaling
-- To get 100vh visually, we need: 100vh ÷ 0.67 = 149.25vh in layout space
-- **Rule**: All heights/min-heights that should be "full viewport" must use `149.25vh`
+**Why 125vh?**
+- Body is scaled to 0.8 of its layout size
+- 100vh in layout space becomes 80vh visually after scaling
+- To get 100vh visually, we need: 100vh ÷ 0.8 = 125vh in layout space
+- **Rule**: All heights/min-heights that should be "full viewport" must use `125vh`
 
 **Scrolling Behavior:**
 - `html` and `body` have `overflow: hidden` to prevent page-level scrolling
@@ -139,9 +139,12 @@ body {
 ### Landing Page Architecture (`public/memora-cinematic.html`)
 
 Single-file landing page with:
+- **Compact header** - Reduced height (1rem padding, 48px logo) for more content visibility
+- **Section navigation** - Center nav bar with clickable section links: Memory, Voice, Features, Why Different
+- **Smooth scroll** - Native `scrollIntoView({ behavior: 'smooth' })` for animated section jumps
+- **Section anchors** - IDs added to main sections (#memory, #voice, #features, #difference)
 - Cinematic film grain effect (fixed pseudo-element with SVG noise)
 - Scroll-triggered parallax effects
-- Smooth scroll wrapper for momentum scrolling
 - Scroll indicator (animated down arrow at bottom of hero)
 
 ### Next.js Components
@@ -170,35 +173,45 @@ Single-file landing page with:
 - Uses `date-fns` for relative timestamps (`subHours`, `subMinutes`, `formatISO`)
 - **No mutations persist** - page refresh resets everything
 
-### Accessibility Features
-
-**Jargon Simplifier** (`lib/jargon-simplifier.ts`):
-- Maps technical/medical terms to plain language
-- Examples: "Leqembi" → "memory medication", "Safe radius" → "safe walking area"
-- Toggle in dashboard toolbar ("Simple Language" button)
-- Designed for elderly users with varying tech literacy
-
-**Read Aloud** (Dashboard toolbar):
-- Text-to-speech for current page content
-- Slower rate (0.85) for elderly users
-- Simplifies jargon before speaking
-- Helps users with vision or reading difficulties
+### Accessibility & Design Principles
 
 **Design Principles**:
-- High contrast (pure black #000000 background, white #FFFFFF text)
-- Large touch targets (minimum 44px, many 72px+)
-- Simple navigation patterns
-- Voice-first interaction model
-- No complex gestures required
+- **High contrast** - Pure black #000000 background, white #FFFFFF text
+- **WCAG AAA compliant** - Verified contrast ratios:
+  - Orange #FF9800: 9.61:1 (exceeds 7:1 requirement)
+  - Gold #FFB74D: 12.32:1 (exceeds 7:1 requirement)
+  - Green #4CAF50: 7.80:1 (exceeds 7:1 requirement)
+- **Large touch targets** - Minimum 44px, many 72px+
+- **Simple navigation patterns** - Section-based navigation with smooth scroll
+- **Voice-first interaction model** - Patient interface prioritizes voice
+- **No complex gestures required** - Single taps and simple interactions only
 
 ## Critical Styling Rules
 
-### Logo Consistency
+### Logo Sizes
 
-Logo and "MEMORA" text must be identical on landing page and dashboard:
+**IMPORTANT**: Logo sizes are currently DIFFERENT on landing page vs dashboard:
 
+**Landing Page** (`memora-cinematic.html`):
 ```css
-/* Both pages MUST use: */
+.logo img {
+  width: 48px;
+  height: 48px;
+  filter: invert(1) brightness(1.2);
+}
+
+.logo-text {
+  font-family: 'Inconsolata', monospace;
+  font-size: 1.5rem;            /* 24px */
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+```
+
+**Dashboard** (`dashboard.html`):
+```css
 .logo-image {
   width: 96px;
   height: 96px;
@@ -207,13 +220,15 @@ Logo and "MEMORA" text must be identical on landing page and dashboard:
 
 .logo-text {
   font-family: 'Inconsolata', monospace;
-  font-size: 40px;              /* 2.5rem on landing page */
+  font-size: 40px;              /* 40px */
   font-weight: 900;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: #FFFFFF;               /* var(--ink) on landing page */
+  color: #FFFFFF;
 }
 ```
+
+**Note**: This inconsistency exists to keep landing page header compact (1rem padding) while dashboard uses larger logo for visibility.
 
 ### Color Palette
 
@@ -241,7 +256,7 @@ Logo and "MEMORA" text must be identical on landing page and dashboard:
 **Dashboard**:
 - Primary: `Inter` (400, 500, 600, 700)
 - Logo: `Inconsolata` (400, 700, 900)
-- Base size: `12px` (due to scale transform)
+- Base size: `18px` (with scale(0.8) transform applied)
 
 **Landing Page**:
 - Body: `Literata` (serif)
@@ -290,22 +305,22 @@ Logo and "MEMORA" text must be identical on landing page and dashboard:
 
 **Problem**: Sidebar only extends 1/3 down the page on content-light pages.
 
-**Cause**: Using `100vh` with `transform: scale(0.67)` on body.
+**Cause**: Using `100vh` with `transform: scale(0.8)` on body.
 
-**Solution**: Always use `149.25vh` for full-height elements:
+**Solution**: Always use `125vh` for full-height elements:
 ```css
 /* WRONG */
 .sidebar { min-height: 100vh; }
 
 /* CORRECT */
-.sidebar { height: 149.25vh; }
+.sidebar { height: 125vh; }
 ```
 
 ### 2. Unwanted Scrolling
 
 **Problem**: Entire page scrolls (sidebar moves with scroll).
 
-**Cause**: Browser window is scrollable because body is 149.25% of viewport.
+**Cause**: Browser window is scrollable because body is 125% of viewport.
 
 **Solution**: `overflow: hidden` on both `html` and `body`:
 ```css
@@ -328,25 +343,32 @@ body { overflow: hidden; }
 <a href="/dashboard.html">Dashboard</a>
 ```
 
-### 4. Logo Size Mismatch
+### 4. Logo Size Inconsistency (Current State)
 
-**Problem**: Logo appears different sizes on landing vs dashboard.
+**Current Situation**: Logo sizes are intentionally DIFFERENT on landing vs dashboard.
 
-**Cause**: Different font sizes or image dimensions in CSS.
+**Landing Page**: 48px image, 1.5rem (24px) text - for compact header
+**Dashboard**: 96px image, 40px text - for visibility in scaled interface
 
-**Solution**: Both must use `96px` image, `40px` (or `2.5rem`) text:
-```css
-.logo-image { width: 96px; height: 96px; }
-.logo-text { font-size: 40px; } /* or 2.5rem */
-```
+**Why**: Landing page uses compact header (1rem padding) to maximize content space, while dashboard needs larger logo for visibility with scale(0.8) transform.
+
+**If you need consistency**: Update landing page to 96px/40px OR update dashboard to 48px/24px.
 
 ### 5. Fixed Positioning with Transform
 
 **Problem**: `position: fixed` doesn't work correctly on sidebar.
 
-**Cause**: `transform: scale(0.67)` on parent creates new stacking context.
+**Cause**: `transform: scale(0.8)` on parent creates new stacking context.
 
 **Solution**: Don't use `position: fixed` on elements inside scaled container. Use flexbox with `overflow: hidden` instead.
+
+### 6. Landing Page Section Navigation
+
+**How it works**:
+- Section links in center nav bar (#memory, #voice, #features, #difference)
+- JavaScript prevents default anchor behavior
+- Uses `scrollIntoView({ behavior: 'smooth', block: 'start' })` for animated scroll
+- IDs added to main `<section>` elements for targeting
 
 ## Development Workflow
 
@@ -504,7 +526,8 @@ Patient speaks → Deepgram (STT) → Claude Haiku (fast response) → LiveKit (
 3. **No Persistence** - All data resets on page refresh (Letta integration planned)
 4. **No Real Voice** - Audio waveform is simulated (LiveKit + Deepgram integration planned)
 5. **Dashboard Content** - Only "Overview" and "Voice Chat" pages have real content; Timeline, Insights, Settings are placeholders
-6. **Scale Transform** - The `transform: scale(0.67)` approach is a hack; ideally redesign to fit viewport naturally
+6. **Scale Transform** - The `transform: scale(0.8)` approach is a workaround; ideally redesign to fit viewport naturally
+7. **Logo Inconsistency** - Landing page uses 48px logo, dashboard uses 96px logo (intentional for compact header vs visibility)
 
 ## File Tree Summary
 
