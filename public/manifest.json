@@ -1,0 +1,16 @@
+{
+  "name": "Memora Care",
+  "short_name": "Memora",
+  "description": "A voice-first AI companion for dementia care",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#d4a574",
+  "icons": [
+    {
+      "src": "/memoralogo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

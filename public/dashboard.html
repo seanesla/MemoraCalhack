@@ -1,0 +1,3083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memora Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inconsolata:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: #000000;
+            color: #FFFFFF;
+            font-size: 12px;
+            line-height: 1.6;
+            transform: scale(0.67);
+            transform-origin: top left;
+            width: 149.25%;
+            height: 149.25%;
+            overflow: hidden;
+        }
+
+        .dashboard-container {
+            display: flex;
+            height: 149.25vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            width: 300px;
+            height: 149.25vh;
+            background: #000000;
+            border-right: 2px solid #FFFFFF;
+            padding: 32px 24px;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .logo {
+            margin-bottom: 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex-shrink: 0;
+            align-items: center;
+        }
+
+        .logo-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            padding: 12px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .logo-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(2px);
+        }
+
+        .logo-link:active {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(0);
+        }
+
+        .logo-image {
+            width: 96px;
+            height: 96px;
+            filter: invert(1) brightness(1.2);
+            flex-shrink: 0;
+        }
+
+        .logo-text {
+            font-family: 'Inconsolata', monospace;
+            font-size: 40px;
+            font-weight: 900;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: #FFFFFF;
+            margin-right: -0.2em;
+        }
+
+        .logo-subtitle {
+            font-size: 16px;
+            color: #FFFFFF;
+            margin-left: 60px;
+        }
+
+        .nav-menu {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            flex-shrink: 0;
+            margin-top: 24px;
+            margin-bottom: 40px;
+        }
+
+        .nav-item {
+            margin: 0;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 28px 24px;
+            color: #FFFFFF;
+            background: #000000;
+            text-decoration: none;
+            border: 2px solid #FFFFFF;
+            border-radius: 12px;
+            font-size: 22px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            min-height: 80px;
+            cursor: pointer;
+        }
+
+        .nav-link:hover {
+            background: #FFB74D;
+            color: #000000;
+            transform: translateX(4px);
+        }
+
+        .nav-link:active {
+            background: #F57C00;
+            color: #000000;
+            transform: translateX(2px);
+        }
+
+        .nav-link.active {
+            background: #FFFFFF;
+            color: #000000;
+        }
+
+        .nav-icon {
+            width: 32px;
+            height: 32px;
+            margin-right: 16px;
+            stroke-width: 2.5;
+        }
+
+        .user-section {
+            margin-top: auto;
+            padding: 28px;
+            background: #000000;
+            border: 2px solid #FFFFFF;
+            border-radius: 12px;
+            flex-shrink: 0;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .user-avatar {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: #FFFFFF;
+            color: #000000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: 700;
+        }
+
+        .user-details h4 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #FFFFFF;
+            margin-bottom: 6px;
+        }
+
+        .user-details p {
+            font-size: 18px;
+            color: #FFFFFF;
+            opacity: 0.9;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            background: #000000;
+            height: 149.25vh;
+            overflow-y: auto;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .page-header {
+            margin-bottom: 40px;
+            padding-bottom: 24px;
+            border-bottom: 2px solid #FFFFFF;
+        }
+
+        .page-title {
+            font-size: 48px;
+            font-weight: 700;
+            color: #FFFFFF;
+            margin-bottom: 12px;
+        }
+
+        .page-subtitle {
+            font-size: 18px;
+            color: #FFFFFF;
+        }
+
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+            margin-bottom: 48px;
+        }
+
+        /* Cards - Large Click Targets */
+        .card {
+            background: #0A0A0A;
+            border: 2px solid #FFFFFF;
+            border-radius: 8px;
+            padding: 32px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            min-height: 200px;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 8px 8px 0 #FFFFFF;
+        }
+
+        .card:active {
+            transform: translateY(0);
+            box-shadow: 4px 4px 0 #FFFFFF;
+        }
+
+        .hero-card {
+            grid-column: span 2;
+            background: #FFB74D;
+            color: #000000;
+            min-height: 280px;
+        }
+
+        .hero-card .card-label,
+        .hero-card .card-value,
+        .hero-card .card-subtitle {
+            color: #000000;
+        }
+
+        .card-label {
+            font-size: 16px;
+            font-weight: 500;
+            color: #FFFFFF;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .card-value {
+            font-size: 56px;
+            font-weight: 700;
+            color: #FFFFFF;
+            margin-bottom: 8px;
+            line-height: 1;
+        }
+
+        .card-subtitle {
+            font-size: 18px;
+            color: #FFFFFF;
+            margin-bottom: 16px;
+        }
+
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            margin-bottom: 16px;
+            stroke: #FFFFFF;
+            stroke-width: 2.5;
+        }
+
+        /* Photo Card */
+        .photo-card {
+            background: #0A0A0A;
+            border: 2px solid #FFFFFF;
+            border-radius: 8px;
+            padding: 0;
+            overflow: hidden;
+            grid-column: span 2;
+        }
+
+        .photo-placeholder {
+            background: #1A1A1A;
+            height: 240px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 64px;
+            border-bottom: 2px solid #FFFFFF;
+        }
+
+        .photo-caption {
+            padding: 24px 32px;
+        }
+
+        .photo-caption h3 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #FFFFFF;
+            margin-bottom: 8px;
+        }
+
+        .photo-caption p {
+            font-size: 18px;
+            color: #FFFFFF;
+        }
+
+        /* Status indicators */
+        .status-good {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #4CAF50;
+            color: #000000;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 600;
+            margin-top: 16px;
+        }
+
+        .status-warning {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #FF9800;
+            color: #000000;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 600;
+            margin-top: 16px;
+        }
+
+        /* Insights Card */
+        .insights-card {
+            grid-column: span 2;
+            background: #0A0A0A;
+            border: 2px solid #FFFFFF;
+            border-radius: 8px;
+            padding: 32px;
+        }
+
+        .insights-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .insights-icon {
+            width: 32px;
+            height: 32px;
+            stroke: #FFFFFF;
+            stroke-width: 2.5;
+        }
+
+        .insights-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #FFFFFF;
+        }
+
+        .insights-content {
+            font-size: 18px;
+            color: #FFFFFF;
+            line-height: 1.7;
+        }
+
+        .insights-content p {
+            margin-bottom: 16px;
+        }
+
+        .insight-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .insight-tag {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #FFFFFF;
+            color: #000000;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        /* Memory Section */
+        .memory-section {
+            margin-top: 48px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #FFFFFF;
+        }
+
+        .section-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: #FFFFFF;
+        }
+
+        .section-badge {
+            padding: 8px 20px;
+            background: #FFFFFF;
+            color: #000000;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .memory-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+        }
+
+        .memory-card {
+            background: #0A0A0A;
+            border: 2px solid #FFFFFF;
+            border-radius: 8px;
+            padding: 24px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .memory-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 4px 4px 0 #FFFFFF;
+        }
+
+        .memory-time {
+            font-size: 16px;
+            font-weight: 600;
+            color: #FFFFFF;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .memory-quote {
+            font-size: 20px;
+            color: #FFFFFF;
+            font-weight: 500;
+            margin-bottom: 12px;
+            font-style: italic;
+        }
+
+        .memory-context {
+            font-size: 16px;
+            color: #FFFFFF;
+        }
+
+        /* Three-Tier Memory System Styles */
+        .tier-section {
+            margin-top: 48px;
+        }
+
+        .tier-section:first-child {
+            margin-top: 0;
+        }
+
+        .core-memory-card {
+            background: #0A0A0A;
+            border: 2px solid #FFB74D;  /* Gold border for core */
+            border-radius: 8px;
+            padding: 24px;
+            transition: all 0.2s ease;
+        }
+
+        .core-memory-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 4px 4px 0 #FFB74D;
+        }
+
+        .core-memory-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #FFB74D;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .core-memory-badge {
+            font-size: 12px;
+            padding: 4px 8px;
+            background: #FFB74D;
+            color: #000000;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .core-memory-value {
+            font-size: 16px;
+            color: #FFFFFF;
+            line-height: 1.6;
+        }
+
+        .archival-memory-card {
+            background: #0A0A0A;
+            border: 2px solid #FFFFFF;
+            border-radius: 8px;
+            padding: 24px;
+            transition: all 0.2s ease;
+        }
+
+        .archival-memory-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 4px 4px 0 #FFFFFF;
+        }
+
+        .archival-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .archival-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #FFFFFF;
+        }
+
+        .archival-date {
+            font-size: 14px;
+            color: #FFFFFF;
+            opacity: 0.6;
+        }
+
+        .archival-summary {
+            font-size: 16px;
+            color: #FFFFFF;
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+
+        .archival-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .archival-tag {
+            padding: 4px 12px;
+            background: #FFFFFF;
+            color: #000000;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .alert-card {
+            background: #0A0A0A;
+            border: 2px solid #FFFFFF;
+            border-radius: 8px;
+            padding: 24px;
+            transition: all 0.2s ease;
+        }
+
+        .alert-card.enabled {
+            border-color: #4CAF50;
+        }
+
+        .alert-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 4px 4px 0 #FFFFFF;
+        }
+
+        .alert-card.enabled:hover {
+            box-shadow: 4px 4px 0 #4CAF50;
+        }
+
+        .alert-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .alert-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #FFFFFF;
+        }
+
+        .alert-status {
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .alert-status.enabled {
+            background: #4CAF50;
+            color: #000000;
+        }
+
+        .alert-status.disabled {
+            background: #666666;
+            color: #FFFFFF;
+        }
+
+        .alert-details {
+            font-size: 16px;
+            color: #FFFFFF;
+            line-height: 1.6;
+        }
+
+        .alert-config {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 14px;
+            color: #FFFFFF;
+            opacity: 0.8;
+        }
+
+        /* Timeline Styles */
+        .timeline-filters {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 12px 24px;
+            background: #0A0A0A;
+            border: 2px solid #FFFFFF;
+            border-radius: 8px;
+            color: #FFFFFF;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .filter-btn:hover {
+            background: #1A1A1A;
+            transform: translateY(-2px);
+        }
+
+        .filter-btn.active {
+            background: #FFB74D;
+            border-color: #FFB74D;
+            color: #000000;
+        }
+
+        .timeline-container {
+            position: relative;
+        }
+
+        .timeline-event {
+            position: relative;
+            margin-bottom: 32px;
+            padding-left: 48px;
+        }
+
+        .timeline-event:last-child {
+            margin-bottom: 0;
+        }
+
+        .timeline-connector {
+            position: absolute;
+            left: 19px;
+            top: 40px;
+            bottom: -32px;
+            width: 2px;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .timeline-event:last-child .timeline-connector {
+            display: none;
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid #FFFFFF;
+            background: #0A0A0A;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .timeline-dot svg {
+            width: 24px;
+            height: 24px;
+            stroke: #FFFFFF;
+        }
+
+        .timeline-dot.severity-info {
+            border-color: #FFFFFF;
+        }
+
+        .timeline-dot.severity-warning {
+            border-color: #FF9800;
+        }
+
+        .timeline-dot.severity-warning svg {
+            stroke: #FF9800;
+        }
+
+        .timeline-dot.severity-critical {
+            border-color: #F44336;
+        }
+
+        .timeline-dot.severity-critical svg {
+            stroke: #F44336;
+        }
+
+        .timeline-event-card {
+            background: #0A0A0A;
+            border: 2px solid #FFFFFF;
+            border-radius: 8px;
+            padding: 24px;
+            transition: all 0.2s ease;
+        }
+
+        .timeline-event-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 4px 4px 0 #FFFFFF;
+        }
+
+        .timeline-event-card.severity-warning {
+            border-color: #FF9800;
+        }
+
+        .timeline-event-card.severity-warning:hover {
+            box-shadow: 4px 4px 0 #FF9800;
+        }
+
+        .timeline-event-card.severity-critical {
+            border-color: #F44336;
+        }
+
+        .timeline-event-card.severity-critical:hover {
+            box-shadow: 4px 4px 0 #F44336;
+        }
+
+        .event-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .event-title-section {
+            flex: 1;
+        }
+
+        .event-type {
+            font-size: 14px;
+            font-weight: 600;
+            color: #FFB74D;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+        }
+
+        .event-summary {
+            font-size: 18px;
+            font-weight: 600;
+            color: #FFFFFF;
+        }
+
+        .event-timestamp {
+            font-size: 14px;
+            color: #FFFFFF;
+            opacity: 0.6;
+            white-space: nowrap;
+        }
+
+        .event-details {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 16px;
+            color: #FFFFFF;
+            line-height: 1.6;
+        }
+
+        .event-details-item {
+            margin-bottom: 8px;
+        }
+
+        .event-details-label {
+            font-weight: 600;
+            color: #FFB74D;
+        }
+
+        .severity-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-left: 12px;
+        }
+
+        .severity-badge.severity-info {
+            background: #FFFFFF;
+            color: #000000;
+        }
+
+        .severity-badge.severity-warning {
+            background: #FF9800;
+            color: #000000;
+        }
+
+        .severity-badge.severity-critical {
+            background: #F44336;
+            color: #FFFFFF;
+        }
+
+        /* Insights Styles */
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 24px;
+        }
+
+        .insight-section {
+            background: #0A0A0A;
+            border: 2px solid #FFFFFF;
+            border-radius: 8px;
+            padding: 24px;
+            transition: all 0.2s ease;
+        }
+
+        .insight-section:hover {
+            transform: translateY(-2px);
+            box-shadow: 4px 4px 0 #FFFFFF;
+        }
+
+        .insight-section.positive {
+            border-color: #4CAF50;
+        }
+
+        .insight-section.positive:hover {
+            box-shadow: 4px 4px 0 #4CAF50;
+        }
+
+        .insight-section.concern {
+            border-color: #FF9800;
+        }
+
+        .insight-section.concern:hover {
+            box-shadow: 4px 4px 0 #FF9800;
+        }
+
+        .insight-section.priority {
+            border-color: #FFB74D;
+        }
+
+        .insight-section.priority:hover {
+            box-shadow: 4px 4px 0 #FFB74D;
+        }
+
+        .insight-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .insight-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #FFFFFF;
+        }
+
+        .insight-badge {
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .insight-badge.positive {
+            background: #4CAF50;
+            color: #000000;
+        }
+
+        .insight-badge.neutral {
+            background: #FFFFFF;
+            color: #000000;
+        }
+
+        .insight-badge.concern {
+            background: #FF9800;
+            color: #000000;
+        }
+
+        .insight-stat {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .insight-stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #FFFFFF;
+        }
+
+        .insight-stat-label {
+            font-size: 16px;
+            color: #FFFFFF;
+            opacity: 0.7;
+        }
+
+        .insight-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .insight-list-item {
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .insight-list-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .insight-list-item:first-child {
+            padding-top: 0;
+        }
+
+        .insight-item-text {
+            flex: 1;
+            font-size: 16px;
+            color: #FFFFFF;
+            line-height: 1.5;
+        }
+
+        .insight-item-count {
+            font-size: 20px;
+            font-weight: 700;
+            color: #FFB74D;
+            min-width: 40px;
+            text-align: right;
+        }
+
+        .question-bar {
+            height: 8px;
+            background: rgba(255, 183, 77, 0.3);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .question-bar-fill {
+            height: 100%;
+            background: #FFB74D;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .chart-placeholder {
+            width: 100%;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 16px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .summary-item {
+            text-align: center;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+
+        .summary-item-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #FFB74D;
+            margin-bottom: 4px;
+        }
+
+        .summary-item-label {
+            font-size: 14px;
+            color: #FFFFFF;
+            opacity: 0.7;
+        }
+
+        /* Settings Styles */
+        .settings-grid {
+            display: grid;
+            gap: 24px;
+        }
+
+        .settings-section {
+            background: #0A0A0A;
+            border: 2px solid #FFFFFF;
+            border-radius: 8px;
+            padding: 24px;
+            transition: all 0.2s ease;
+        }
+
+        .settings-section:hover {
+            transform: translateY(-2px);
+            box-shadow: 4px 4px 0 #FFFFFF;
+        }
+
+        .settings-section.danger {
+            border-color: #F44336;
+        }
+
+        .settings-section.danger:hover {
+            box-shadow: 4px 4px 0 #F44336;
+        }
+
+        .settings-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .settings-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #FFFFFF;
+        }
+
+        .settings-description {
+            font-size: 16px;
+            color: #FFFFFF;
+            opacity: 0.7;
+            margin-bottom: 24px;
+        }
+
+        .alert-config-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .alert-config-card:last-child {
+            margin-bottom: 0;
+        }
+
+        .alert-config-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .alert-config-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #FFFFFF;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 32px;
+            background: #666666;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .toggle-switch.enabled {
+            background: #4CAF50;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: 24px;
+            height: 24px;
+            background: #FFFFFF;
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+        }
+
+        .toggle-switch.enabled::after {
+            transform: translateX(28px);
+        }
+
+        .config-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .config-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .config-label {
+            font-size: 16px;
+            color: #FFFFFF;
+            opacity: 0.8;
+        }
+
+        .config-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: #FFB74D;
+        }
+
+        .channel-checkboxes {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .channel-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .channel-checkbox.checked {
+            border-color: #FFB74D;
+            background: rgba(255, 183, 77, 0.2);
+        }
+
+        .checkbox-icon {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #FFFFFF;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .channel-checkbox.checked .checkbox-icon {
+            background: #FFB74D;
+            border-color: #FFB74D;
+        }
+
+        .checkbox-icon::after {
+            content: '✓';
+            color: #000000;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .channel-checkbox.checked .checkbox-icon::after {
+            opacity: 1;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 16px;
+            font-weight: 600;
+            color: #FFFFFF;
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #FFFFFF;
+            font-size: 16px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #FFB74D;
+        }
+
+        .form-input:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #FFFFFF;
+            font-size: 16px;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+        }
+
+        .form-select:focus {
+            outline: none;
+            border-color: #FFB74D;
+        }
+
+        .danger-button {
+            background: transparent;
+            border: 2px solid #F44336;
+            color: #F44336;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .danger-button:hover {
+            background: #F44336;
+            color: #FFFFFF;
+            transform: translateY(-2px);
+        }
+
+        /* Accessibility Toolbar Styles */
+        .accessibility-toolbar {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 12px;
+            z-index: 1000;
+            background: rgba(10, 10, 10, 0.95);
+            padding: 12px;
+            border-radius: 12px;
+            border: 2px solid #FFFFFF;
+            backdrop-filter: blur(10px);
+        }
+
+        .accessibility-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            background: #0A0A0A;
+            border: 2px solid #FFFFFF;
+            border-radius: 8px;
+            color: #FFFFFF;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .accessibility-btn:hover {
+            background: #1A1A1A;
+            transform: translateY(-2px);
+            box-shadow: 4px 4px 0 #FFFFFF;
+        }
+
+        .accessibility-btn.active {
+            background: #FFB74D;
+            border-color: #FFB74D;
+            color: #000000;
+        }
+
+        .accessibility-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* Voice Chat Page Styles */
+        .voice-interface-container {
+            display: flex;
+            flex-direction: column;
+            height: calc(149.25vh - 200px);
+            max-width: 100%;
+        }
+
+        /* Conversation display area (scrollable) */
+        .voice-conversation-display {
+            flex: 1;
+            width: 100%;
+            padding: 48px 64px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Empty state */
+        .voice-empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            gap: 24px;
+            opacity: 0.6;
+        }
+
+        .voice-empty-state.hidden {
+            display: none;
+        }
+
+        .voice-empty-icon {
+            width: 120px;
+            height: 120px;
+            stroke: rgba(255, 255, 255, 0.3);
+            stroke-width: 1.5;
+        }
+
+        .voice-empty-text {
+            font-size: 28px;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.6);
+            margin: 0;
+        }
+
+        .voice-empty-hint {
+            font-size: 20px;
+            font-weight: 300;
+            color: rgba(255, 255, 255, 0.4);
+            margin: 0;
+        }
+
+        /* Messages container */
+        .voice-messages-container {
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+        }
+
+        /* Message cards */
+        .voice-message-card {
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            animation: messageSlideIn 0.3s ease-out;
+            position: relative;
+        }
+
+        @keyframes messageSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .voice-message-card.user {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .voice-message-card.assistant {
+            background: rgba(167, 139, 250, 0.08);
+            border-color: rgba(167, 139, 250, 0.25);
+        }
+
+        .voice-message-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .voice-message-header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .voice-message-label {
+            font-size: 18px;
+            font-weight: 700;
+            color: #A78BFA;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+        }
+
+        .voice-message-timestamp {
+            font-size: 16px;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.4);
+            letter-spacing: 0;
+        }
+
+        .voice-message-text {
+            font-size: 28px;
+            color: #FFFFFF;
+            line-height: 1.6;
+            font-weight: 400;
+        }
+
+        .voice-message-edit-btn {
+            padding: 8px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: #FFFFFF;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .voice-message-edit-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #A78BFA;
+        }
+
+        .voice-message-edit-container {
+            display: none;
+            margin-top: 20px;
+            gap: 16px;
+        }
+
+        .voice-message-edit-container.active {
+            display: flex;
+        }
+
+        .voice-message-edit-input {
+            flex: 1;
+            padding: 20px 24px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            color: #FFFFFF;
+            font-size: 24px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .voice-message-edit-input:focus {
+            outline: none;
+            border-color: #A78BFA;
+        }
+
+        .voice-message-edit-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .voice-message-save-btn,
+        .voice-message-cancel-btn {
+            padding: 20px 32px;
+            border: none;
+            border-radius: 16px;
+            font-size: 20px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .voice-message-save-btn {
+            background: #A78BFA;
+            color: #000000;
+        }
+
+        .voice-message-save-btn:hover {
+            background: #C4B5FD;
+        }
+
+        .voice-message-cancel-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            color: #FFFFFF;
+        }
+
+        .voice-message-cancel-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Fixed Bottom Bar */
+        .voice-bottom-bar {
+            position: sticky;
+            bottom: 0;
+            width: 100%;
+            padding: 32px 64px;
+            background: #000000;
+            border-top: 2px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            z-index: 10;
+        }
+
+        /* Small microphone button */
+        .voice-mic-btn-small {
+            flex-shrink: 0;
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .voice-mic-btn-small:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #A78BFA;
+            transform: scale(1.05);
+        }
+
+        .voice-mic-btn-small:active {
+            transform: scale(0.95);
+        }
+
+        .voice-mic-btn-small.listening {
+            background: rgba(167, 139, 250, 0.2);
+            border-color: #A78BFA;
+            animation: micPulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes micPulse {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(167, 139, 250, 0.4);
+            }
+            50% {
+                box-shadow: 0 0 0 12px rgba(167, 139, 250, 0);
+            }
+        }
+
+        .voice-mic-btn-small svg {
+            width: 32px;
+            height: 32px;
+            stroke: #FFFFFF;
+        }
+
+        /* Text input field */
+        .voice-text-input-field {
+            flex: 1;
+            padding: 24px 32px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            color: #FFFFFF;
+            font-size: 24px;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s ease;
+        }
+
+        .voice-text-input-field:focus {
+            outline: none;
+            border-color: #A78BFA;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .voice-text-input-field::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Send button */
+        .voice-send-btn {
+            flex-shrink: 0;
+            padding: 24px 48px;
+            background: #A78BFA;
+            border: none;
+            border-radius: 20px;
+            color: #000000;
+            font-size: 24px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            letter-spacing: 0.02em;
+        }
+
+        .voice-send-btn:hover {
+            background: #C4B5FD;
+            transform: translateY(-2px);
+        }
+
+        .voice-send-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Button Styles */
+        .btn {
+            display: inline-block;
+            padding: 16px 32px;
+            font-size: 18px;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 2px solid #FFFFFF;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-height: 56px;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: #FF5722;
+            color: #FFFFFF;
+        }
+
+        .btn-primary:hover {
+            background: #E64A19;
+            transform: translateY(-2px);
+        }
+
+        .btn-primary:active {
+            background: #D84315;
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #000000;
+            color: #FFFFFF;
+        }
+
+        .btn-secondary:hover {
+            background: #1A1A1A;
+        }
+
+        /* Feedback - Visual indication on click */
+        .clicked {
+            animation: clickFeedback 0.3s ease;
+        }
+
+        @keyframes clickFeedback {
+            0% { transform: scale(1); }
+            50% { transform: scale(0.98); }
+            100% { transform: scale(1); }
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 240px;
+            }
+            
+            .hero-card,
+            .photo-card,
+            .insights-card {
+                grid-column: span 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                border-right: none;
+                border-bottom: 2px solid #FFFFFF;
+            }
+            
+            .main-content {
+                padding: 24px;
+            }
+            
+            .page-title {
+                font-size: 36px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="logo">
+                <a href="/" class="logo-link">
+                    <img src="/memoralogo.svg" alt="Memora" class="logo-image">
+                    <div class="logo-text">Memora</div>
+                </a>
+            </div>
+
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="#" class="nav-link active" data-page="overview">
+                        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                        </svg>
+                        Home
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-page="timeline">
+                        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Timeline
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-page="insights">
+                        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        Insights
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-page="voice">
+                        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                        </svg>
+                        Voice Chat
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-page="memories">
+                        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                        </svg>
+                        Memories
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-page="settings">
+                        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        Settings
+                    </a>
+                </li>
+            </ul>
+
+            <div class="user-section">
+                <div class="user-info">
+                    <div class="user-avatar">AS</div>
+                    <div class="user-details">
+                        <h4>Ava Smith</h4>
+                        <p>Caregiver</p>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Accessibility Toolbar -->
+        <div class="accessibility-toolbar">
+            <button class="accessibility-btn" id="simplify-toggle" title="Simplify technical terms">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <span>Simple Language</span>
+            </button>
+            <button class="accessibility-btn" id="read-aloud-btn" title="Read page content aloud">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                </svg>
+                <span>Read Aloud</span>
+            </button>
+        </div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Overview Page -->
+            <div id="overview-page" class="page active">
+                <div class="page-header">
+                    <h1 class="page-title">Today's Overview</h1>
+                    <p class="page-subtitle">Friday, October 24, 2025</p>
+                </div>
+
+                <div class="dashboard-grid">
+                    <!-- Hero Card -->
+                    <div class="hero-card card">
+                        <div class="card-label">Engagement Score</div>
+                        <div class="card-value">9.2/10</div>
+                        <div class="card-subtitle">Strong interaction today</div>
+                        <div class="status-good">All systems normal</div>
+                    </div>
+
+                    <!-- Photo Card -->
+                    <div class="photo-card">
+                        <div class="photo-placeholder">📸</div>
+                        <div class="photo-caption">
+                            <h3>Video call, 2:15 PM</h3>
+                            <p>Laughing with grandchildren. This was a beautiful moment.</p>
+                        </div>
+                    </div>
+
+                    <!-- Activity Card -->
+                    <div class="card">
+                        <svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div class="card-label">Activities</div>
+                        <div class="card-value">5</div>
+                        <div class="card-subtitle">Completed today</div>
+                        <div class="status-good">On track</div>
+                    </div>
+
+                    <!-- Medications Card -->
+                    <div class="card">
+                        <svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                        </svg>
+                        <div class="card-label">Medications</div>
+                        <div class="card-value">2/3</div>
+                        <div class="card-subtitle">Taken today</div>
+                        <div class="status-warning">Evening dose pending</div>
+                    </div>
+
+                    <!-- Sleep Card -->
+                    <div class="card">
+                        <svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                        </svg>
+                        <div class="card-label">Sleep Quality</div>
+                        <div class="card-value">7.5h</div>
+                        <div class="card-subtitle">Last night</div>
+                        <div class="status-good">Good rest</div>
+                    </div>
+
+                    <!-- Mood Card -->
+                    <div class="card">
+                        <svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div class="card-label">Mood</div>
+                        <div class="card-value">Cheerful</div>
+                        <div class="card-subtitle">All day</div>
+                        <div style="font-size: 32px; margin-top: 12px;">😊</div>
+                    </div>
+
+                    <!-- AI Insights Card -->
+                    <div class="insights-card">
+                        <div class="insights-header">
+                            <svg class="insights-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                            </svg>
+                            <div class="insights-title">Today's Insights</div>
+                        </div>
+                        <div class="insights-content">
+                            <p>Dorothy showed strong engagement during social interactions today.</p>
+                            
+                            <p>She responded well during the video call. She mentioned specific memories about her grandchildren.</p>
+                            
+                            <p>Her activity levels match her typical patterns. She completed her morning walk without prompting.</p>
+                            
+                            <div class="insight-tags">
+                                <span class="insight-tag">Social engagement up</span>
+                                <span class="insight-tag">Memory recall strong</span>
+                                <span class="insight-tag">Routine normal</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Memory Section -->
+                <div class="memory-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Recent Memory Moments</h2>
+                        <span class="section-badge">4 today</span>
+                    </div>
+                    <div class="memory-grid">
+                        <div class="memory-card">
+                            <div class="memory-time">Today at 2:15 PM</div>
+                            <div class="memory-quote">I remember when Sarah was just learning to walk...</div>
+                            <div class="memory-context">During video call. She recalled granddaughter's childhood without prompting.</div>
+                        </div>
+                        <div class="memory-card">
+                            <div class="memory-time">Today at 9:30 AM</div>
+                            <div class="memory-quote">The roses in the garden look beautiful today</div>
+                            <div class="memory-context">Morning walk. She showed awareness of surroundings.</div>
+                        </div>
+                        <div class="memory-card">
+                            <div class="memory-time">Today at 8:00 AM</div>
+                            <div class="memory-quote">Oh yes, it's Friday! Book club is tomorrow</div>
+                            <div class="memory-context">Morning routine. She showed strong time awareness.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timeline Page -->
+            <div id="timeline-page" class="page">
+                <div class="page-header">
+                    <h1 class="page-title">Timeline</h1>
+                    <p class="page-subtitle">Complete daily activity history</p>
+                </div>
+
+                <!-- Filter Buttons -->
+                <div class="timeline-filters">
+                    <button class="filter-btn active">All</button>
+                    <button class="filter-btn">Conversations</button>
+                    <button class="filter-btn">Alerts</button>
+                    <button class="filter-btn">Updates</button>
+                </div>
+
+                <!-- Timeline Events -->
+                <div class="timeline-container">
+                    <!-- Event 1: Medication Reminder -->
+                    <div class="timeline-event">
+                        <div class="timeline-dot severity-info">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                        </div>
+                        <div class="timeline-connector"></div>
+                        <div class="timeline-event-card severity-info">
+                            <div class="event-header">
+                                <div class="event-title-section">
+                                    <div class="event-type">Conversation</div>
+                                    <div class="event-summary">Evening medication reminder acknowledged</div>
+                                </div>
+                                <div class="event-timestamp">6 minutes ago</div>
+                            </div>
+                            <div class="event-details">
+                                <div class="event-details-item">
+                                    <span class="event-details-label">Summary:</span> Patient confirmed taking Leqembi at 8:15 PM.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Event 2: Wandering Alert -->
+                    <div class="timeline-event">
+                        <div class="timeline-dot severity-warning">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
+                        <div class="timeline-connector"></div>
+                        <div class="timeline-event-card severity-warning">
+                            <div class="event-header">
+                                <div class="event-title-section">
+                                    <div class="event-type">Sensor Alert</div>
+                                    <div class="event-summary">Possible wandering pattern outside quiet hours</div>
+                                </div>
+                                <div class="event-timestamp">28 minutes ago</div>
+                            </div>
+                            <div class="event-details">
+                                <div class="event-details-item">
+                                    <span class="event-details-label">Distance:</span> 142 m from safe radius
+                                </div>
+                                <div class="event-details-item">
+                                    <span class="event-details-label">Direction:</span> Northwest
+                                </div>
+                                <div class="event-details-item">
+                                    <span class="event-details-label">Location:</span> Side yard walkway
+                                </div>
+                                <div class="event-details-item">
+                                    <span class="event-details-label">Confidence:</span> 73%
+                                </div>
+                                <div class="event-details-item">
+                                    <span class="event-details-label">Follow-up:</span> Caregiver text check-in triggered
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Event 3: Pattern Change -->
+                    <div class="timeline-event">
+                        <div class="timeline-dot severity-info">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                            </svg>
+                        </div>
+                        <div class="timeline-connector"></div>
+                        <div class="timeline-event-card severity-info">
+                            <div class="event-header">
+                                <div class="event-title-section">
+                                    <div class="event-type">Pattern Change</div>
+                                    <div class="event-summary">Routine variance: skipped evening journaling</div>
+                                </div>
+                                <div class="event-timestamp">54 minutes ago</div>
+                            </div>
+                            <div class="event-details">
+                                <div class="event-details-item">
+                                    <span class="event-details-label">Follow-up:</span> Agent suggested reminiscing prompt instead
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Event 4: Fall Detection -->
+                    <div class="timeline-event">
+                        <div class="timeline-dot severity-critical">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div class="timeline-connector"></div>
+                        <div class="timeline-event-card severity-critical">
+                            <div class="event-header">
+                                <div class="event-title-section">
+                                    <div class="event-type">Sensor Alert</div>
+                                    <div class="event-summary">Fall detection resolved</div>
+                                </div>
+                                <div class="event-timestamp">2 hours ago</div>
+                            </div>
+                            <div class="event-details">
+                                <div class="event-details-item">
+                                    <span class="event-details-label">Acceleration Peak:</span> 2.4 g
+                                </div>
+                                <div class="event-details-item">
+                                    <span class="event-details-label">Stillness Duration:</span> 37 seconds
+                                </div>
+                                <div class="event-details-item">
+                                    <span class="event-details-label">Follow-up:</span> Caregiver phoned. Patient confirmed no injury.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Event 5: Memory Update -->
+                    <div class="timeline-event">
+                        <div class="timeline-dot severity-info">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                            </svg>
+                        </div>
+                        <div class="timeline-event-card severity-info">
+                            <div class="event-header">
+                                <div class="event-title-section">
+                                    <div class="event-type">Memory Update</div>
+                                    <div class="event-summary">Core memory updated: granddaughter recital details</div>
+                                </div>
+                                <div class="event-timestamp">3 hours ago</div>
+                            </div>
+                            <div class="event-details">
+                                <div class="event-details-item">
+                                    <span class="event-details-label">Summary:</span> New memory cue about upcoming recital added
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Insights Page -->
+            <div id="insights-page" class="page">
+                <div class="page-header">
+                    <h1 class="page-title">Insights</h1>
+                    <p class="page-subtitle">AI observations and patterns</p>
+                </div>
+
+                <!-- Engagement Summary -->
+                <div class="insight-section">
+                    <div class="insight-header">
+                        <h2 class="insight-title">Engagement Summary</h2>
+                        <span class="insight-badge positive">Positive Trend</span>
+                    </div>
+                    <div class="summary-grid">
+                        <div class="summary-item">
+                            <div class="summary-item-value">😊</div>
+                            <div class="summary-item-label">Mood: Positive</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-item-value">4</div>
+                            <div class="summary-item-label">Day Streak</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-item-value">1.8s</div>
+                            <div class="summary-item-label">Avg Response Time</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Two-column grid for sections -->
+                <div class="insights-grid">
+                    <!-- Frequent Questions -->
+                    <div class="insight-section">
+                        <div class="insight-header">
+                            <h2 class="insight-title">Frequent Questions</h2>
+                            <span class="insight-badge neutral">10 Total</span>
+                        </div>
+                        <ul class="insight-list">
+                            <li class="insight-list-item">
+                                <div class="insight-item-text">
+                                    What time is Ava visiting tomorrow?
+                                    <div class="question-bar">
+                                        <div class="question-bar-fill" style="width: 100%;"></div>
+                                    </div>
+                                </div>
+                                <div class="insight-item-count">5</div>
+                            </li>
+                            <li class="insight-list-item">
+                                <div class="insight-item-text">
+                                    Where did I put my reading glasses?
+                                    <div class="question-bar">
+                                        <div class="question-bar-fill" style="width: 60%;"></div>
+                                    </div>
+                                </div>
+                                <div class="insight-item-count">3</div>
+                            </li>
+                            <li class="insight-list-item">
+                                <div class="insight-item-text">
+                                    What day is it today?
+                                    <div class="question-bar">
+                                        <div class="question-bar-fill" style="width: 40%;"></div>
+                                    </div>
+                                </div>
+                                <div class="insight-item-count">2</div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Positive Moments -->
+                    <div class="insight-section positive">
+                        <div class="insight-header">
+                            <h2 class="insight-title">Positive Moments</h2>
+                            <span class="insight-badge positive">2 Today</span>
+                        </div>
+                        <ul class="insight-list">
+                            <li class="insight-list-item">
+                                <div class="insight-item-text">
+                                    Remembered granddaughter Lily's piano recital without prompt
+                                </div>
+                            </li>
+                            <li class="insight-list-item">
+                                <div class="insight-item-text">
+                                    Shared detailed story about honeymoon in Big Sur
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Concerns -->
+                    <div class="insight-section concern">
+                        <div class="insight-header">
+                            <h2 class="insight-title">Concerns</h2>
+                            <span class="insight-badge concern">Requires Attention</span>
+                        </div>
+                        <ul class="insight-list">
+                            <li class="insight-list-item">
+                                <div class="insight-item-text">
+                                    Mild confusion about weekend schedule
+                                </div>
+                            </li>
+                            <li class="insight-list-item">
+                                <div class="insight-item-text">
+                                    Occasional frustration around misplaced items
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Memory Topics to Reinforce -->
+                    <div class="insight-section priority">
+                        <div class="insight-header">
+                            <h2 class="insight-title">Memory Topics to Reinforce</h2>
+                            <span class="insight-badge neutral">3 Topics</span>
+                        </div>
+                        <ul class="insight-list">
+                            <li class="insight-list-item">
+                                <div class="insight-item-text">
+                                    Tomorrow's brunch with Mark
+                                </div>
+                            </li>
+                            <li class="insight-list-item">
+                                <div class="insight-item-text">
+                                    Medication cadence post-dinner
+                                </div>
+                            </li>
+                            <li class="insight-list-item">
+                                <div class="insight-item-text">
+                                    Where emergency contact card is stored
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Conversation Patterns -->
+                <div class="insight-section">
+                    <div class="insight-header">
+                        <h2 class="insight-title">Conversation Patterns</h2>
+                        <span class="insight-badge neutral">Last 7 Days</span>
+                    </div>
+                    <div class="insights-grid">
+                        <div>
+                            <h3 style="font-size: 18px; font-weight: 600; color: #FFFFFF; margin-bottom: 8px;">Time of Day Distribution</h3>
+                            <div class="chart-placeholder">
+                                📊 Peak activity: Morning (8-11 AM)
+                            </div>
+                        </div>
+                        <div>
+                            <h3 style="font-size: 18px; font-weight: 600; color: #FFFFFF; margin-bottom: 8px;">Topic Distribution</h3>
+                            <div class="chart-placeholder">
+                                📈 Most common: Family (42%), Schedule (28%), Items (18%)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Voice Chat Page -->
+            <div id="voice-page" class="page">
+                <div class="page-header">
+                    <h1 class="page-title">Talk with Memora</h1>
+                    <p class="page-subtitle">Ask me anything about your day, memories, or activities</p>
+                </div>
+
+                <!-- Voice Interface Container -->
+                <div class="voice-interface-container">
+                    <!-- Conversation Area (scrollable) -->
+                    <div id="conversation-display" class="voice-conversation-display">
+                        <!-- Empty state message (hidden when conversation starts) -->
+                        <div id="voice-empty-state" class="voice-empty-state">
+                            <svg class="voice-empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                            <p class="voice-empty-text">Your conversation with Memora will appear here</p>
+                            <p class="voice-empty-hint">Press the microphone or type a message to begin</p>
+                        </div>
+
+                        <!-- Messages will be inserted here dynamically -->
+                        <div id="conversation-messages" class="voice-messages-container"></div>
+                    </div>
+
+                    <!-- Fixed Bottom Input Bar -->
+                    <div class="voice-bottom-bar">
+                        <button id="voice-button" class="voice-mic-btn-small" title="Press to speak" aria-label="Start voice input">
+                            <!-- Simpler microphone icon -->
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 14a3 3 0 003-3V5a3 3 0 00-6 0v6a3 3 0 003 3z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 10v1a7 7 0 01-14 0v-1" />
+                            </svg>
+                        </button>
+                        <input
+                            type="text"
+                            id="voice-text-input"
+                            class="voice-text-input-field"
+                            placeholder="Type your message..."
+                            aria-label="Type your message"
+                        />
+                        <button id="voice-send-button" class="voice-send-btn" aria-label="Send message">
+                            Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Memories Page -->
+            <div id="memories-page" class="page">
+                <div class="page-header">
+                    <h1 class="page-title">Memory System</h1>
+                    <p class="page-subtitle">Three-tier persistent memory architecture</p>
+                </div>
+
+                <!-- TIER 1: Core Memory -->
+                <div class="tier-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Tier 1: Core Memory</h2>
+                        <span class="section-badge">Always Active</span>
+                    </div>
+                    <div class="memory-grid">
+                        <div class="core-memory-card">
+                            <div class="core-memory-label">
+                                <span>Agent Persona</span>
+                                <span class="core-memory-badge">EDITABLE</span>
+                            </div>
+                            <div class="core-memory-value">
+                                Speak with warmth, steady pacing, and gentle affirmations. Offer grounding sensory cues when anxiety rises.
+                            </div>
+                        </div>
+
+                        <div class="core-memory-card">
+                            <div class="core-memory-label">
+                                <span>Patient Profile</span>
+                                <span class="core-memory-badge">EDITABLE</span>
+                            </div>
+                            <div class="core-memory-value">
+                                John Smith, 72. Retired middle-school literature teacher. Married to Ava. Loves jazz piano, gardening, and storytelling about road trips. Finds comfort in soft instrumental music and mint tea. Grandchildren: Lily (9), Mateo (6).
+                            </div>
+                        </div>
+
+                        <div class="core-memory-card">
+                            <div class="core-memory-label">
+                                <span>Current Context</span>
+                                <span class="core-memory-badge">AUTO-UPDATE</span>
+                            </div>
+                            <div class="core-memory-value">
+                                It is Thursday evening. Earlier today John walked in Live Oak Park. Ava is preparing for tomorrow's brunch with neighbors. Weather is cool and foggy.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TIER 2: Archival Memory -->
+                <div class="tier-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Tier 2: Archival Memory</h2>
+                        <span class="section-badge">3 Entries</span>
+                    </div>
+                    <div class="memory-grid">
+                        <div class="archival-memory-card">
+                            <div class="archival-header">
+                                <span class="archival-title">Lily's recital excitement</span>
+                                <span class="archival-date">4 hours ago</span>
+                            </div>
+                            <div class="archival-summary">
+                                Discussed Lily's piano recital program and scheduled gentle reminders for morning practice cues.
+                            </div>
+                            <div class="archival-tags">
+                                <span class="archival-tag">family</span>
+                                <span class="archival-tag">upcoming</span>
+                                <span class="archival-tag">music</span>
+                            </div>
+                        </div>
+
+                        <div class="archival-memory-card">
+                            <div class="archival-header">
+                                <span class="archival-title">Garden routine anchoring</span>
+                                <span class="archival-date">8 hours ago</span>
+                            </div>
+                            <div class="archival-summary">
+                                Captured John's joy describing tomato vines; built sensory prompt for weekend watering routine.
+                            </div>
+                            <div class="archival-tags">
+                                <span class="archival-tag">routine</span>
+                                <span class="archival-tag">nature</span>
+                                <span class="archival-tag">memory-cue</span>
+                            </div>
+                        </div>
+
+                        <div class="archival-memory-card">
+                            <div class="archival-header">
+                                <span class="archival-title">Safety escalation follow-through</span>
+                                <span class="archival-date">12 hours ago</span>
+                            </div>
+                            <div class="archival-summary">
+                                Documented fall detection event, caregiver follow-up, and John's feedback about new motion sensor sensitivity.
+                            </div>
+                            <div class="archival-tags">
+                                <span class="archival-tag">safety</span>
+                                <span class="archival-tag">insight</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TIER 3: Alert Configuration -->
+                <div class="tier-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Tier 3: Alert Configuration</h2>
+                        <span class="section-badge">Active Monitoring</span>
+                    </div>
+                    <div class="memory-grid">
+                        <div class="alert-card enabled">
+                            <div class="alert-header">
+                                <span class="alert-name">Fall Detection</span>
+                                <span class="alert-status enabled">ENABLED</span>
+                            </div>
+                            <div class="alert-details">
+                                Monitors for sudden changes in movement patterns indicating potential falls.
+                            </div>
+                            <div class="alert-config">
+                                Sensitivity: Medium • Escalation Delay: 45s • Channels: SMS, Push
+                            </div>
+                        </div>
+
+                        <div class="alert-card enabled">
+                            <div class="alert-header">
+                                <span class="alert-name">Wandering Detection</span>
+                                <span class="alert-status enabled">ENABLED</span>
+                            </div>
+                            <div class="alert-details">
+                                Alerts when patient moves outside designated safe radius.
+                            </div>
+                            <div class="alert-config">
+                                Safe Radius: 110m • Quiet Hours: 21:00-06:00 • Channels: SMS, Email
+                            </div>
+                        </div>
+
+                        <div class="alert-card enabled">
+                            <div class="alert-header">
+                                <span class="alert-name">Activity Patterns</span>
+                                <span class="alert-status enabled">ENABLED</span>
+                            </div>
+                            <div class="alert-details">
+                                Tracks daily routines and alerts for unusual inactivity periods.
+                            </div>
+                            <div class="alert-config">
+                                Inactivity Threshold: 3 hours • Channels: Push, Email
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Page -->
+            <div id="settings-page" class="page">
+                <div class="page-header">
+                    <h1 class="page-title">Settings</h1>
+                    <p class="page-subtitle">Manage alert preferences and account settings</p>
+                </div>
+
+                <div class="settings-grid">
+                    <!-- Alert Configuration -->
+                    <div class="settings-section">
+                        <div class="settings-header">
+                            <h2 class="settings-title">Alert Configuration</h2>
+                        </div>
+                        <p class="settings-description">Configure how and when you receive alerts about the patient's activities.</p>
+
+                        <!-- Fall Detection -->
+                        <div class="alert-config-card">
+                            <div class="alert-config-header">
+                                <h3 class="alert-config-name">Fall Detection</h3>
+                                <div class="toggle-switch enabled"></div>
+                            </div>
+                            <div class="config-row">
+                                <span class="config-label">Sensitivity</span>
+                                <span class="config-value">Medium</span>
+                            </div>
+                            <div class="config-row">
+                                <span class="config-label">Escalation Delay</span>
+                                <span class="config-value">45 seconds</span>
+                            </div>
+                            <div class="config-row">
+                                <span class="config-label">Notification Channels</span>
+                            </div>
+                            <div class="channel-checkboxes">
+                                <div class="channel-checkbox checked">
+                                    <div class="checkbox-icon"></div>
+                                    <span>Text Message</span>
+                                </div>
+                                <div class="channel-checkbox">
+                                    <div class="checkbox-icon"></div>
+                                    <span>Email</span>
+                                </div>
+                                <div class="channel-checkbox checked">
+                                    <div class="checkbox-icon"></div>
+                                    <span>Push Notification</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Wandering Detection -->
+                        <div class="alert-config-card">
+                            <div class="alert-config-header">
+                                <h3 class="alert-config-name">Wandering Detection</h3>
+                                <div class="toggle-switch enabled"></div>
+                            </div>
+                            <div class="config-row">
+                                <span class="config-label">Safe Radius</span>
+                                <span class="config-value">110 meters</span>
+                            </div>
+                            <div class="config-row">
+                                <span class="config-label">Quiet Hours</span>
+                                <span class="config-value">21:00 - 06:00</span>
+                            </div>
+                            <div class="config-row">
+                                <span class="config-label">Notification Channels</span>
+                            </div>
+                            <div class="channel-checkboxes">
+                                <div class="channel-checkbox checked">
+                                    <div class="checkbox-icon"></div>
+                                    <span>Text Message</span>
+                                </div>
+                                <div class="channel-checkbox checked">
+                                    <div class="checkbox-icon"></div>
+                                    <span>Email</span>
+                                </div>
+                                <div class="channel-checkbox">
+                                    <div class="checkbox-icon"></div>
+                                    <span>Push Notification</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Activity Patterns -->
+                        <div class="alert-config-card">
+                            <div class="alert-config-header">
+                                <h3 class="alert-config-name">Activity Pattern Monitoring</h3>
+                                <div class="toggle-switch enabled"></div>
+                            </div>
+                            <div class="config-row">
+                                <span class="config-label">Inactivity Threshold</span>
+                                <span class="config-value">3 hours</span>
+                            </div>
+                            <div class="config-row">
+                                <span class="config-label">Notification Channels</span>
+                            </div>
+                            <div class="channel-checkboxes">
+                                <div class="channel-checkbox">
+                                    <div class="checkbox-icon"></div>
+                                    <span>Text Message</span>
+                                </div>
+                                <div class="channel-checkbox">
+                                    <div class="checkbox-icon"></div>
+                                    <span>Email</span>
+                                </div>
+                                <div class="channel-checkbox checked">
+                                    <div class="checkbox-icon"></div>
+                                    <span>Push Notification</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notification Preferences -->
+                    <div class="settings-section">
+                        <div class="settings-header">
+                            <h2 class="settings-title">Notification Preferences</h2>
+                        </div>
+                        <div class="form-group">
+                            <div class="config-row">
+                                <label class="config-label">Daily Summary Report</label>
+                                <div class="toggle-switch enabled"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="config-row">
+                                <label class="config-label">Critical Alerts Only</label>
+                                <div class="toggle-switch"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Email Digest Frequency</label>
+                            <select class="form-select">
+                                <option>Daily</option>
+                                <option selected>Weekly</option>
+                                <option>Monthly</option>
+                                <option>Never</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Account Settings -->
+                    <div class="settings-section">
+                        <div class="settings-header">
+                            <h2 class="settings-title">Account Settings</h2>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Caregiver Name</label>
+                            <input type="text" class="form-input" value="Ava Smith" disabled />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" class="form-input" value="ava.smith@memora.app" disabled />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Timezone</label>
+                            <select class="form-select">
+                                <option>Pacific Time (PT)</option>
+                                <option>Mountain Time (MT)</option>
+                                <option>Central Time (CT)</option>
+                                <option>Eastern Time (ET)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <button class="btn btn-secondary">Change Password</button>
+                        </div>
+                    </div>
+
+                    <!-- Privacy & Data -->
+                    <div class="settings-section danger">
+                        <div class="settings-header">
+                            <h2 class="settings-title">Privacy & Data</h2>
+                        </div>
+                        <p class="settings-description">Manage your data retention and privacy settings.</p>
+                        <div class="form-group">
+                            <label class="form-label">Data Retention Period</label>
+                            <select class="form-select">
+                                <option>30 Days</option>
+                                <option>90 Days</option>
+                                <option selected>1 Year</option>
+                                <option>Forever</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <button class="btn btn-secondary">Export All Data</button>
+                        </div>
+                        <div class="form-group">
+                            <button class="danger-button">Delete Account</button>
+                            <p style="font-size: 14px; color: #F44336; margin-top: 8px; opacity: 0.8;">Warning: This action cannot be undone. All data will be permanently deleted.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Navigation with visible feedback
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                
+                // Add visible click feedback
+                link.classList.add('clicked');
+                setTimeout(() => link.classList.remove('clicked'), 300);
+                
+                // Update active state
+                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                link.classList.add('active');
+                
+                // Show page
+                const pageName = link.dataset.page;
+                document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+                document.getElementById(`${pageName}-page`).classList.add('active');
+                
+                // Log for debugging
+                console.log('Navigated to:', pageName);
+            });
+        });
+
+        // Card interactions with immediate feedback
+        document.querySelectorAll('.card, .memory-card').forEach(card => {
+            card.addEventListener('click', function() {
+                this.classList.add('clicked');
+                setTimeout(() => this.classList.remove('clicked'), 300);
+                console.log('Card clicked:', this);
+            });
+        });
+
+        // No auto-refresh, no timeouts, no auto-play
+        // All data is static and requires manual refresh
+
+        // Accessibility Features: Jargon Simplification
+        const jargonMap = {
+            'Leqembi': 'memory medication',
+            'medication': 'medicine',
+            'Acceleration Peak': 'Force of movement',
+            '2.4 g': 'a strong force (like a fall)',
+            'Safe Radius': 'Safe walking area',
+            '110 meters': 'about a city block',
+            '110m': 'about a city block',
+            'Confidence: 73%': 'Likely correct',
+            'Confidence': 'How sure we are',
+            'Engagement Score': 'How active you were',
+            'Sensor Alert': 'Safety notice',
+            'Pattern Change': 'Change in routine',
+            'Memory Update': 'New memory note',
+            'Wandering Detection': 'Walking monitor',
+            'Activity Pattern Monitoring': 'Daily routine check',
+            'Fall Detection': 'Fall safety check',
+            'quiet hours': 'nighttime',
+            'outside quiet hours': 'during the day',
+            'safe radius': 'safe area',
+            'escalation delay': 'wait time before alert',
+            'inactivity threshold': 'time without movement',
+            'sensitivity': 'how careful the detector is',
+            'acceleration peak': 'strongest movement',
+            'stillness duration': 'time not moving',
+            'geolocation': 'location tracker',
+            'accelerometer': 'movement sensor',
+            'acknowledged': 'confirmed',
+            'cadence': 'schedule',
+            'variance': 'change'
+        };
+
+        function simplifyText(text) {
+            let simplified = text;
+            const sortedKeys = Object.keys(jargonMap).sort((a, b) => b.length - a.length);
+
+            for (const jargon of sortedKeys) {
+                const simple = jargonMap[jargon];
+                const regex = new RegExp(jargon, 'gi');
+                simplified = simplified.replace(regex, simple);
+            }
+
+            return simplified;
+        }
+
+        let isSimplified = false;
+        const simplifyBtn = document.getElementById('simplify-toggle');
+
+        simplifyBtn.addEventListener('click', () => {
+            isSimplified = !isSimplified;
+            simplifyBtn.classList.toggle('active');
+
+            if (isSimplified) {
+                // Simplify all text
+                const selectors = ['.event-type', '.event-summary', '.card-label', '.card-value', '.card-subtitle', '.config-label', '.config-value', '.alert-config-name', '.insight-item-text', '.archival-title', '.core-memory-label', '.event-details-item', '.page-subtitle', '.insight-title', '.settings-title', '.settings-description'];
+
+                selectors.forEach(selector => {
+                    document.querySelectorAll(selector).forEach(el => {
+                        if (el.textContent) {
+                            const original = el.textContent;
+                            const simplified = simplifyText(original);
+                            if (original !== simplified) {
+                                if (!el.getAttribute('data-original')) {
+                                    el.setAttribute('data-original', original);
+                                }
+                                el.textContent = simplified;
+                            }
+                        }
+                    });
+                });
+            } else {
+                // Restore original text
+                document.querySelectorAll('[data-original]').forEach(el => {
+                    el.textContent = el.getAttribute('data-original');
+                });
+            }
+        });
+
+        // Accessibility Features: Read Aloud
+        const readAloudBtn = document.getElementById('read-aloud-btn');
+
+        readAloudBtn.addEventListener('click', () => {
+            if (!window.speechSynthesis) {
+                alert('Speech not supported in this browser');
+                return;
+            }
+
+            // Cancel any ongoing speech
+            window.speechSynthesis.cancel();
+
+            // Get current active page
+            const activePage = document.querySelector('.page.active');
+            if (!activePage) return;
+
+            // Build spoken description
+            const pageTitle = activePage.querySelector('.page-title')?.textContent || '';
+            const pageSubtitle = activePage.querySelector('.page-subtitle')?.textContent || '';
+
+            let spokenText = `${pageTitle}. ${pageSubtitle}. `;
+
+            // Add card content
+            const cards = activePage.querySelectorAll('.card, .insight-section, .settings-section, .timeline-event-card, .core-memory-card, .archival-memory-card');
+            cards.forEach((card, index) => {
+                const label = card.querySelector('.card-label, .insight-title, .settings-title, .event-summary, .core-memory-label, .archival-title')?.textContent;
+                const value = card.querySelector('.card-value, .insight-stat-value, .core-memory-value')?.textContent;
+                const subtitle = card.querySelector('.card-subtitle, .event-details, .settings-description')?.textContent;
+
+                if (label) spokenText += `${label}. `;
+                if (value) spokenText += `${value}. `;
+                if (subtitle && subtitle.length < 200) spokenText += `${subtitle}. `;
+            });
+
+            // Simplify before speaking
+            const simplifiedText = simplifyText(spokenText);
+
+            // Speak
+            const utterance = new SpeechSynthesisUtterance(simplifiedText);
+            utterance.rate = 0.85; // Slower for elderly
+            utterance.pitch = 1.0;
+            utterance.volume = 1.0;
+
+            // Visual feedback
+            readAloudBtn.classList.add('active');
+            utterance.onend = () => {
+                readAloudBtn.classList.remove('active');
+            };
+
+            window.speechSynthesis.speak(utterance);
+        });
+
+        // ===== VOICE PAGE FUNCTIONALITY =====
+
+        // Voice page elements
+        const voiceButton = document.getElementById('voice-button');
+        const voiceEmptyState = document.getElementById('voice-empty-state');
+        const conversationMessages = document.getElementById('conversation-messages');
+        const conversationDisplay = document.getElementById('conversation-display');
+        const voicePageTextInput = document.getElementById('voice-text-input');
+        const voiceSendButton = document.getElementById('voice-send-button');
+
+        // Voice state
+        let voicePageState = 'idle'; // 'idle' | 'listening' | 'thinking' | 'responding'
+        let messageIdCounter = 0;
+
+        // Helper: Format timestamp
+        function formatTimestamp(date) {
+            const hours = date.getHours();
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            const period = hours >= 12 ? 'PM' : 'AM';
+            const displayHours = hours % 12 || 12;
+            return `${displayHours}:${minutes} ${period}`;
+        }
+
+        // Helper: Add message to conversation
+        function addMessage(type, text, timestamp = new Date()) {
+            // Hide empty state on first message
+            if (voiceEmptyState && !voiceEmptyState.classList.contains('hidden')) {
+                voiceEmptyState.classList.add('hidden');
+            }
+
+            const messageId = messageIdCounter++;
+
+            // Create message card
+            const messageCard = document.createElement('div');
+            messageCard.className = `voice-message-card ${type}`;
+            messageCard.dataset.messageId = messageId;
+            messageCard.dataset.originalText = text;
+            messageCard.dataset.timestamp = timestamp.toISOString();
+
+            // Create header (label + timestamp + edit button for user messages)
+            const messageHeader = document.createElement('div');
+            messageHeader.className = 'voice-message-header';
+
+            const messageHeaderLeft = document.createElement('div');
+            messageHeaderLeft.className = 'voice-message-header-left';
+
+            const messageLabel = document.createElement('div');
+            messageLabel.className = 'voice-message-label';
+            messageLabel.textContent = type === 'user' ? 'You' : 'Memora';
+            messageHeaderLeft.appendChild(messageLabel);
+
+            // Add timestamp for user messages only
+            if (type === 'user') {
+                const messageTimestamp = document.createElement('div');
+                messageTimestamp.className = 'voice-message-timestamp';
+                messageTimestamp.textContent = formatTimestamp(timestamp);
+                messageHeaderLeft.appendChild(messageTimestamp);
+            }
+
+            messageHeader.appendChild(messageHeaderLeft);
+
+            // Add edit button for user messages
+            if (type === 'user') {
+                const editBtn = document.createElement('button');
+                editBtn.className = 'voice-message-edit-btn';
+                editBtn.textContent = 'Edit';
+                editBtn.onclick = () => startEditMessage(messageCard);
+                messageHeader.appendChild(editBtn);
+            }
+
+            messageCard.appendChild(messageHeader);
+
+            // Create message text
+            const messageText = document.createElement('div');
+            messageText.className = 'voice-message-text';
+            messageText.textContent = text;
+            messageCard.appendChild(messageText);
+
+            // Create edit container (hidden by default)
+            if (type === 'user') {
+                const editContainer = document.createElement('div');
+                editContainer.className = 'voice-message-edit-container';
+
+                const editInput = document.createElement('input');
+                editInput.type = 'text';
+                editInput.className = 'voice-message-edit-input';
+                editInput.value = text;
+
+                const editActions = document.createElement('div');
+                editActions.className = 'voice-message-edit-actions';
+
+                const saveBtn = document.createElement('button');
+                saveBtn.className = 'voice-message-save-btn';
+                saveBtn.textContent = 'Save';
+                saveBtn.onclick = () => saveEditMessage(messageCard, editInput.value);
+
+                const cancelBtn = document.createElement('button');
+                cancelBtn.className = 'voice-message-cancel-btn';
+                cancelBtn.textContent = 'Cancel';
+                cancelBtn.onclick = () => cancelEditMessage(messageCard);
+
+                editActions.appendChild(saveBtn);
+                editActions.appendChild(cancelBtn);
+                editContainer.appendChild(editInput);
+                editContainer.appendChild(editActions);
+                messageCard.appendChild(editContainer);
+            }
+
+            conversationMessages.appendChild(messageCard);
+
+            // Scroll to bottom
+            setTimeout(() => {
+                conversationDisplay.scrollTop = conversationDisplay.scrollHeight;
+            }, 100);
+
+            return messageId;
+        }
+
+        // Helper: Start editing a message
+        function startEditMessage(messageCard) {
+            const editContainer = messageCard.querySelector('.voice-message-edit-container');
+            const messageText = messageCard.querySelector('.voice-message-text');
+            const editBtn = messageCard.querySelector('.voice-message-edit-btn');
+
+            editContainer.classList.add('active');
+            messageText.style.display = 'none';
+            editBtn.style.display = 'none';
+        }
+
+        // Helper: Cancel editing a message
+        function cancelEditMessage(messageCard) {
+            const editContainer = messageCard.querySelector('.voice-message-edit-container');
+            const messageText = messageCard.querySelector('.voice-message-text');
+            const editBtn = messageCard.querySelector('.voice-message-edit-btn');
+            const editInput = messageCard.querySelector('.voice-message-edit-input');
+
+            editContainer.classList.remove('active');
+            messageText.style.display = 'block';
+            editBtn.style.display = 'block';
+            editInput.value = messageCard.dataset.originalText;
+        }
+
+        // Helper: Save edited message and regenerate from that point
+        function saveEditMessage(messageCard, newText) {
+            if (!newText.trim() || voicePageState !== 'idle') return;
+
+            // Update message text
+            const messageText = messageCard.querySelector('.voice-message-text');
+            messageText.textContent = newText;
+            messageCard.dataset.originalText = newText;
+
+            // Hide edit UI
+            cancelEditMessage(messageCard);
+
+            // Delete all messages after this one
+            const messageId = parseInt(messageCard.dataset.messageId);
+            const allMessages = Array.from(conversationMessages.querySelectorAll('.voice-message-card'));
+            allMessages.forEach(msg => {
+                if (parseInt(msg.dataset.messageId) > messageId) {
+                    msg.remove();
+                }
+            });
+
+            // Regenerate response
+            voicePageState = 'thinking';
+
+            setTimeout(() => {
+                voicePageState = 'responding';
+                addMessage('assistant', `You edited your message to: "${newText}". This is a demo response. In the full application, Memora would regenerate the conversation from this point based on your edited message.`);
+            }, 1500);
+
+            setTimeout(() => {
+                voicePageState = 'idle';
+            }, 2500);
+        }
+
+        // Handle voice button click
+        if (voiceButton) {
+            voiceButton.addEventListener('click', () => {
+                if (voicePageState !== 'idle') return;
+
+                // Change to listening state
+                voicePageState = 'listening';
+                voiceButton.classList.add('listening');
+
+                // Mock: Simulate user speaking
+                setTimeout(() => {
+                    voicePageState = 'thinking';
+
+                    // Add user message
+                    addMessage('user', "What activities did I do today?");
+                }, 2000);
+
+                // Mock: Show assistant response
+                setTimeout(() => {
+                    voicePageState = 'responding';
+
+                    addMessage('assistant', "Today you had a wonderful day! You took a 30-minute walk in the morning, had a video call with your grandchildren at 2:15 PM, and took your memory medication at 9 AM. Your mood has been cheerful all day.");
+                }, 3500);
+
+                // Mock: Return to idle
+                setTimeout(() => {
+                    voicePageState = 'idle';
+                    voiceButton.classList.remove('listening');
+                }, 5000);
+            });
+        }
+
+        // Handle text input submission
+        function handleVoicePageTextSubmit() {
+            const text = voicePageTextInput.value.trim();
+            if (!text || voicePageState !== 'idle') return;
+
+            // Add user message
+            addMessage('user', text);
+            voicePageTextInput.value = '';
+
+            // Show thinking state
+            voicePageState = 'thinking';
+
+            // Mock response
+            setTimeout(() => {
+                voicePageState = 'responding';
+
+                addMessage('assistant', `You asked: "${text}". This is a demo response. In the full application, Memora would use AI to answer your questions about your day, activities, and memories based on your personal data.`);
+            }, 1500);
+
+            // Return to idle
+            setTimeout(() => {
+                voicePageState = 'idle';
+            }, 2500);
+        }
+
+        if (voiceSendButton) {
+            voiceSendButton.addEventListener('click', handleVoicePageTextSubmit);
+        }
+
+        if (voicePageTextInput) {
+            voicePageTextInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleVoicePageTextSubmit();
+                }
+            });
+        }
+    </script>
+</body>
+</html>
