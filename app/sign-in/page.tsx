@@ -24,10 +24,10 @@ export default function SignInPage() {
               </div>
               <h3 className="roleTitle">Patient Interface</h3>
               <p className="roleDescription">
-                Simple voice companion with supportive, dignified interaction
+                Simple voice companion with supportive interaction
               </p>
               <ul className="roleFeatures">
-                <li>No surveillance data</li>
+                <li>Privacy controls dashboard</li>
                 <li>Voice-first interaction</li>
                 <li>Orientation cues</li>
               </ul>
