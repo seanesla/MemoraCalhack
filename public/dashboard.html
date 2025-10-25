@@ -1997,8 +1997,8 @@
                     <!-- Hero Card -->
                     <div class="hero-card card">
                         <div class="card-label">Engagement Score</div>
-                        <div class="card-value">9.2/10</div>
-                        <div class="card-subtitle">Strong interaction today</div>
+                        <div class="card-value">9.2/10 <span style="color: #4CAF50; font-size: 0.6em; margin-left: 8px;">↑ from 8.5 yesterday</span></div>
+                        <div class="card-subtitle">Better than usual - Strong interaction today</div>
                         <div class="status-good">All systems normal</div>
                     </div>
 
@@ -2093,17 +2093,17 @@
                         <div class="memory-card">
                             <div class="memory-time">Today at 2:15 PM</div>
                             <div class="memory-quote">I remember when Sarah was just learning to walk...</div>
-                            <div class="memory-context">During video call. She recalled granddaughter's childhood without prompting.</div>
+                            <div class="memory-context">During video call. He recalled his daughter's childhood without prompting.</div>
                         </div>
                         <div class="memory-card">
                             <div class="memory-time">Today at 9:30 AM</div>
                             <div class="memory-quote">The roses in the garden look beautiful today</div>
-                            <div class="memory-context">Morning walk. She showed awareness of surroundings.</div>
+                            <div class="memory-context">Morning walk. He showed awareness of surroundings.</div>
                         </div>
                         <div class="memory-card">
                             <div class="memory-time">Today at 8:00 AM</div>
                             <div class="memory-quote">Oh yes, it's Friday! Book club is tomorrow</div>
-                            <div class="memory-context">Morning routine. She showed strong time awareness.</div>
+                            <div class="memory-context">Morning routine. He showed strong time awareness.</div>
                         </div>
                     </div>
                 </div>
@@ -2161,14 +2161,14 @@
                         <div class="timeline-event-card severity-warning">
                             <div class="event-header">
                                 <div class="event-title-section">
-                                    <div class="event-type">Sensor Alert</div>
-                                    <div class="event-summary">Possible wandering pattern outside quiet hours</div>
+                                    <div class="event-type">Movement Update</div>
+                                    <div class="event-summary">Took a walk outside during the evening</div>
                                 </div>
                                 <div class="event-timestamp">28 minutes ago</div>
                             </div>
                             <div class="event-details">
                                 <div class="event-details-item">
-                                    <span class="event-details-label">Distance:</span> 142 m from safe radius
+                                    <span class="event-details-label">Distance:</span> 142 m from home (about half a block)
                                 </div>
                                 <div class="event-details-item">
                                     <span class="event-details-label">Direction:</span> Northwest
@@ -2221,8 +2221,8 @@
                         <div class="timeline-event-card severity-critical">
                             <div class="event-header">
                                 <div class="event-title-section">
-                                    <div class="event-type">Sensor Alert</div>
-                                    <div class="event-summary">Fall detection resolved</div>
+                                    <div class="event-type">Safety Check</div>
+                                    <div class="event-summary">Motion sensor detected a fall - John confirmed he's okay</div>
                                 </div>
                                 <div class="event-timestamp">2 hours ago</div>
                             </div>
@@ -2598,11 +2598,11 @@
                     <div class="memory-grid">
                         <div class="alert-card enabled">
                             <div class="alert-header">
-                                <span class="alert-name">Fall Detection</span>
+                                <span class="alert-name">Fall Safety</span>
                                 <span class="alert-status enabled">ENABLED</span>
                             </div>
                             <div class="alert-details">
-                                Monitors for sudden changes in movement patterns indicating potential falls.
+                                Monitors movement to help keep John safe from falls.
                             </div>
                             <div class="alert-config">
                                 Sensitivity: Medium • Escalation Delay: 45s • Channels: SMS, Push
@@ -2611,24 +2611,24 @@
 
                         <div class="alert-card enabled">
                             <div class="alert-header">
-                                <span class="alert-name">Wandering Detection</span>
+                                <span class="alert-name">Walking Monitoring</span>
                                 <span class="alert-status enabled">ENABLED</span>
                             </div>
                             <div class="alert-details">
-                                Alerts when patient moves outside designated safe radius.
+                                Alerts when John walks beyond his usual area (about a city block from home).
                             </div>
                             <div class="alert-config">
-                                Safe Radius: 110m • Quiet Hours: 21:00-06:00 • Channels: SMS, Email
+                                Usual area: 110m • Quiet Hours: 21:00-06:00 • Channels: SMS, Email
                             </div>
                         </div>
 
                         <div class="alert-card enabled">
                             <div class="alert-header">
-                                <span class="alert-name">Activity Patterns</span>
+                                <span class="alert-name">Daily Routine Tracking</span>
                                 <span class="alert-status enabled">ENABLED</span>
                             </div>
                             <div class="alert-details">
-                                Tracks daily routines and alerts for unusual inactivity periods.
+                                Tracks John's daily routines and alerts if he's unusually inactive.
                             </div>
                             <div class="alert-config">
                                 Inactivity Threshold: 3 hours • Channels: Push, Email
@@ -2656,7 +2656,7 @@
                         <!-- Fall Detection -->
                         <div class="alert-config-card">
                             <div class="alert-config-header">
-                                <h3 class="alert-config-name">Fall Detection</h3>
+                                <h3 class="alert-config-name">Fall Safety</h3>
                                 <div class="toggle-switch enabled"></div>
                             </div>
                             <div class="config-row">
@@ -2689,11 +2689,11 @@
                         <!-- Wandering Detection -->
                         <div class="alert-config-card">
                             <div class="alert-config-header">
-                                <h3 class="alert-config-name">Wandering Detection</h3>
+                                <h3 class="alert-config-name">Walking Monitoring</h3>
                                 <div class="toggle-switch enabled"></div>
                             </div>
                             <div class="config-row">
-                                <span class="config-label">Safe Radius</span>
+                                <span class="config-label">Usual walking area</span>
                                 <span class="config-value">110 meters</span>
                             </div>
                             <div class="config-row">
@@ -2722,7 +2722,7 @@
                         <!-- Activity Patterns -->
                         <div class="alert-config-card">
                             <div class="alert-config-header">
-                                <h3 class="alert-config-name">Activity Pattern Monitoring</h3>
+                                <h3 class="alert-config-name">Daily Routine Tracking</h3>
                                 <div class="toggle-switch enabled"></div>
                             </div>
                             <div class="config-row">
@@ -2988,9 +2988,12 @@
             'Sensor Alert': 'Safety notice',
             'Pattern Change': 'Change in routine',
             'Memory Update': 'New memory note',
-            'Wandering Detection': 'Walking monitor',
-            'Activity Pattern Monitoring': 'Daily routine check',
-            'Fall Detection': 'Fall safety check',
+            'Wandering Detection': 'Walking Monitoring',
+            'Walking Monitoring': 'Walking check',
+            'Activity Pattern Monitoring': 'Daily Routine Tracking',
+            'Daily Routine Tracking': 'Daily routine check',
+            'Fall Detection': 'Fall Safety',
+            'Fall Safety': 'Fall safety check',
             'quiet hours': 'nighttime',
             'outside quiet hours': 'during the day',
             'safe radius': 'safe area',
@@ -3272,7 +3275,7 @@
 
             setTimeout(() => {
                 voicePageState = 'responding';
-                addMessage('assistant', `You edited your message to: "${newText}". This is a demo response. In the full application, Memora would regenerate the conversation from this point based on your edited message.`);
+                addMessage('assistant', `Based on your question, I can share that John had a great day today. He completed 5 activities: a morning walk in the garden, a video call with Lily and Mateo at 2:15 PM, reading time, watering the tomato plants, and afternoon tea. His mood has been cheerful all day. Would you like more details about any specific activity?`);
             }, 1500);
 
             setTimeout(() => {
