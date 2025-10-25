@@ -6,7 +6,8 @@ import '../auth.css';
 export default function SignUpPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    window.location.href = '/dashboard.html';
+    // After sign-up, redirect to role selector
+    window.location.href = '/sign-in';
   };
 
   return (
@@ -63,7 +64,7 @@ export default function SignUpPage() {
             </Link>
           </p>
 
-          <a href="/dashboard.html" className="skipButton">
+          <a href="/sign-in" className="skipButton">
             Skip for now →
           </a>
         </div>

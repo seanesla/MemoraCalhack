@@ -18,6 +18,7 @@
             overflow: hidden;
             width: 100%;
             height: 100%;
+            background: #000000;
         }
 
         body {
@@ -602,6 +603,76 @@
             font-size: 16px;
             color: #FFFFFF;
             line-height: 1.6;
+        }
+
+        .core-memory-badge.editable {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .core-memory-badge.editable:hover {
+            background: #FFB74D;
+            color: #0A0A0A;
+        }
+
+        .core-memory-edit {
+            margin-top: 16px;
+        }
+
+        .core-memory-textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 12px;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 16px;
+            color: #FFFFFF;
+            background: #1A1A1A;
+            border: 2px solid #FFB74D;
+            border-radius: 4px;
+            resize: vertical;
+            outline: none;
+        }
+
+        .core-memory-textarea:focus {
+            border-color: #FFC107;
+            box-shadow: 0 0 0 3px rgba(255, 183, 77, 0.1);
+        }
+
+        .core-memory-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .btn-save, .btn-cancel {
+            padding: 8px 16px;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-save {
+            background: #FFB74D;
+            color: #0A0A0A;
+        }
+
+        .btn-save:hover {
+            background: #FFC107;
+            transform: translateY(-1px);
+        }
+
+        .btn-cancel {
+            background: transparent;
+            color: #FFFFFF;
+            border: 2px solid #FFFFFF;
+        }
+
+        .btn-cancel:hover {
+            background: rgba(255, 255, 255, 0.1);
         }
 
         .archival-memory-card {
@@ -2412,33 +2483,54 @@
                         <span class="section-badge">Always Active</span>
                     </div>
                     <div class="memory-grid">
-                        <div class="core-memory-card">
+                        <div class="core-memory-card" id="core-memory-persona">
                             <div class="core-memory-label">
                                 <span>Agent Persona</span>
-                                <span class="core-memory-badge">EDITABLE</span>
+                                <span class="core-memory-badge editable" onclick="editCoreMemory('persona')">EDIT</span>
                             </div>
-                            <div class="core-memory-value">
+                            <div class="core-memory-value" id="core-memory-persona-value">
                                 Speak with warmth, steady pacing, and gentle affirmations. Offer grounding sensory cues when anxiety rises.
                             </div>
+                            <div class="core-memory-edit" id="core-memory-persona-edit" style="display: none;">
+                                <textarea class="core-memory-textarea" id="core-memory-persona-input"></textarea>
+                                <div class="core-memory-actions">
+                                    <button class="btn-save" onclick="saveCoreMemory('persona')">Save</button>
+                                    <button class="btn-cancel" onclick="cancelEditCoreMemory('persona')">Cancel</button>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="core-memory-card">
+                        <div class="core-memory-card" id="core-memory-patient">
                             <div class="core-memory-label">
                                 <span>Patient Profile</span>
-                                <span class="core-memory-badge">EDITABLE</span>
+                                <span class="core-memory-badge editable" onclick="editCoreMemory('patient')">EDIT</span>
                             </div>
-                            <div class="core-memory-value">
+                            <div class="core-memory-value" id="core-memory-patient-value">
                                 John Smith, 72. Retired middle-school literature teacher. Married to Ava. Loves jazz piano, gardening, and storytelling about road trips. Finds comfort in soft instrumental music and mint tea. Grandchildren: Lily (9), Mateo (6).
+                            </div>
+                            <div class="core-memory-edit" id="core-memory-patient-edit" style="display: none;">
+                                <textarea class="core-memory-textarea" id="core-memory-patient-input"></textarea>
+                                <div class="core-memory-actions">
+                                    <button class="btn-save" onclick="saveCoreMemory('patient')">Save</button>
+                                    <button class="btn-cancel" onclick="cancelEditCoreMemory('patient')">Cancel</button>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="core-memory-card">
+                        <div class="core-memory-card" id="core-memory-context">
                             <div class="core-memory-label">
                                 <span>Current Context</span>
-                                <span class="core-memory-badge">AUTO-UPDATE</span>
+                                <span class="core-memory-badge editable" onclick="editCoreMemory('context')">EDIT</span>
                             </div>
-                            <div class="core-memory-value">
+                            <div class="core-memory-value" id="core-memory-context-value">
                                 It is Thursday evening. Earlier today John walked in Live Oak Park. Ava is preparing for tomorrow's brunch with neighbors. Weather is cool and foggy.
+                            </div>
+                            <div class="core-memory-edit" id="core-memory-context-edit" style="display: none;">
+                                <textarea class="core-memory-textarea" id="core-memory-context-input"></textarea>
+                                <div class="core-memory-actions">
+                                    <button class="btn-save" onclick="saveCoreMemory('context')">Save</button>
+                                    <button class="btn-cancel" onclick="cancelEditCoreMemory('context')">Cancel</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -2741,6 +2833,89 @@
     </div>
 
     <script>
+        // ===== SHARED STATE MANAGEMENT =====
+        // Synchronizes state between Patient Interface and Caregiver Dashboard via localStorage + BroadcastChannel
+
+        const STORAGE_KEY = 'memora_shared_state';
+        const CHANNEL_NAME = 'memora_sync';
+
+        // Default state
+        const DEFAULT_STATE = {
+            conversations: [],
+            coreMemory: {
+                persona: "Speak with warmth, steady pacing, and gentle affirmations. Offer grounding sensory cues when anxiety rises.",
+                patient: "John Smith, 72. Retired middle-school literature teacher. Married to Ava. Loves jazz piano, gardening, and storytelling about road trips. Finds comfort in soft instrumental music and mint tea. Grandchildren: Lily (9), Mateo (6).",
+                context: "It is Thursday evening. Earlier today John walked in Live Oak Park. Ava is preparing for tomorrow's brunch with neighbors. Weather is cool and foggy."
+            },
+            timeline: [],
+            insights: {
+                frequentQuestions: [],
+                mood: 'positive',
+                lastUpdated: new Date().toISOString()
+            }
+        };
+
+        // Get shared state from localStorage
+        function getSharedState() {
+            try {
+                const stored = localStorage.getItem(STORAGE_KEY);
+                if (!stored) {
+                    setSharedState(DEFAULT_STATE);
+                    return DEFAULT_STATE;
+                }
+                return JSON.parse(stored);
+            } catch (error) {
+                console.error('Error reading shared state:', error);
+                return DEFAULT_STATE;
+            }
+        }
+
+        // Set shared state to localStorage
+        function setSharedState(state) {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+                broadcastStateChange('full_state_update', state);
+            } catch (error) {
+                console.error('Error writing shared state:', error);
+            }
+        }
+
+        // Update Core Memory
+        function updateCoreMemory(updates) {
+            const state = getSharedState();
+            state.coreMemory = { ...state.coreMemory, ...updates };
+            setSharedState(state);
+            broadcastStateChange('core_memory_updated', state.coreMemory);
+            console.log('Core Memory updated:', updates);
+        }
+
+        // BroadcastChannel for real-time sync
+        const broadcastChannel = new BroadcastChannel(CHANNEL_NAME);
+
+        function broadcastStateChange(type, data) {
+            broadcastChannel.postMessage({
+                type,
+                data,
+                timestamp: new Date().toISOString()
+            });
+        }
+
+        // Listen for state changes from other tabs
+        broadcastChannel.addEventListener('message', (event) => {
+            const { type, data } = event.data;
+            console.log('Received state change:', type, data);
+
+            if (type === 'conversation_added') {
+                // Reload Voice Chat messages
+                loadVoiceChatMessages();
+            } else if (type === 'timeline_event_added') {
+                // Could reload timeline if we implement it
+                console.log('New timeline event:', data);
+            }
+        });
+
+        // ===== END SHARED STATE MANAGEMENT =====
+
         // Navigation with visible feedback
         document.querySelectorAll('.nav-link').forEach(link => {
             link.addEventListener('click', (e) => {
@@ -3174,6 +3349,123 @@
                 }
             });
         }
+
+        // Load Voice Chat messages from shared state
+        function loadVoiceChatMessages() {
+            if (!conversationMessages) return;
+
+            const state = getSharedState();
+            const conversations = state.conversations || [];
+
+            // Clear existing messages
+            conversationMessages.innerHTML = '';
+            messageIdCounter = 0;
+
+            if (conversations.length === 0) {
+                // Show empty state
+                if (voiceEmptyState) {
+                    voiceEmptyState.classList.remove('hidden');
+                }
+                return;
+            }
+
+            // Hide empty state
+            if (voiceEmptyState) {
+                voiceEmptyState.classList.add('hidden');
+            }
+
+            // Display all conversations
+            conversations.forEach(conv => {
+                const timestamp = new Date(conv.timestamp);
+
+                // Add user message
+                addMessage('user', conv.userMessage, timestamp);
+
+                // Add assistant message (slightly after user message)
+                const assistantTimestamp = new Date(timestamp.getTime() + 1000);
+                addMessage('assistant', conv.assistantMessage, assistantTimestamp);
+            });
+
+            console.log(`Loaded ${conversations.length} conversations from shared state`);
+        }
+
+        // Initialize Voice Chat on page load
+        loadVoiceChatMessages();
+
+        // ===== CORE MEMORY MANAGEMENT =====
+
+        // Load Core Memory values from shared state
+        function loadCoreMemoryValues() {
+            const state = getSharedState();
+            const coreMemory = state.coreMemory || DEFAULT_STATE.coreMemory;
+
+            const personaValue = document.getElementById('core-memory-persona-value');
+            const patientValue = document.getElementById('core-memory-patient-value');
+            const contextValue = document.getElementById('core-memory-context-value');
+
+            if (personaValue) personaValue.textContent = coreMemory.persona;
+            if (patientValue) patientValue.textContent = coreMemory.patient;
+            if (contextValue) contextValue.textContent = coreMemory.context;
+
+            console.log('Loaded Core Memory from shared state');
+        }
+
+        // Edit Core Memory field
+        function editCoreMemory(field) {
+            const valueElement = document.getElementById(`core-memory-${field}-value`);
+            const editElement = document.getElementById(`core-memory-${field}-edit`);
+            const inputElement = document.getElementById(`core-memory-${field}-input`);
+
+            if (!valueElement || !editElement || !inputElement) return;
+
+            // Set textarea value to current value
+            inputElement.value = valueElement.textContent.trim();
+
+            // Show edit UI, hide display
+            valueElement.style.display = 'none';
+            editElement.style.display = 'block';
+            inputElement.focus();
+        }
+
+        // Save Core Memory field
+        function saveCoreMemory(field) {
+            const inputElement = document.getElementById(`core-memory-${field}-input`);
+            const newValue = inputElement.value.trim();
+
+            if (!newValue) {
+                alert('Value cannot be empty');
+                return;
+            }
+
+            // Update shared state
+            const updates = {};
+            updates[field] = newValue;
+            updateCoreMemory(updates);
+
+            // Update display
+            const valueElement = document.getElementById(`core-memory-${field}-value`);
+            valueElement.textContent = newValue;
+
+            // Hide edit UI, show display
+            cancelEditCoreMemory(field);
+
+            console.log(`Core Memory ${field} updated:`, newValue);
+        }
+
+        // Cancel editing Core Memory field
+        function cancelEditCoreMemory(field) {
+            const valueElement = document.getElementById(`core-memory-${field}-value`);
+            const editElement = document.getElementById(`core-memory-${field}-edit`);
+
+            if (!valueElement || !editElement) return;
+
+            // Show display, hide edit UI
+            valueElement.style.display = 'block';
+            editElement.style.display = 'none';
+        }
+
+        // Initialize Core Memory on page load
+        loadCoreMemoryValues();
     </script>
 </body>
 </html>

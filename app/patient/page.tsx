@@ -8,6 +8,10 @@ export default function PatientPage() {
       <VoiceInterface />
 
       <style jsx global>{`
+        html, body {
+          background: #0a0a0a;
+        }
+
         .patient-page {
           min-height: 100vh;
           background: #0a0a0a;

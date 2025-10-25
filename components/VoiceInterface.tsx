@@ -4,6 +4,13 @@ import { useState, useEffect, useRef } from 'react';
 import PainterlyWaveform from './PainterlyWaveform';
 import ConversationTranscript from './ConversationTranscript';
 import { useMockVoiceConnection } from '@/hooks/useMockVoiceConnection';
+import {
+  getCoreMemory,
+  addConversation,
+  initSharedState,
+  onStateChange,
+  type MemoraCoreMemory
+} from '@/lib/shared-state';
 
 type VoiceState = 'idle' | 'listening' | 'thinking' | 'speaking' | 'error';
 
@@ -13,6 +20,7 @@ export default function VoiceInterface() {
   const [response, setResponse] = useState<string>('');
   const [currentTime, setCurrentTime] = useState(new Date());
   const [hasSpokenWelcome, setHasSpokenWelcome] = useState(false);
+  const [coreMemory, setCoreMemory] = useState<MemoraCoreMemory | null>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
 
   const {
@@ -27,6 +35,23 @@ export default function VoiceInterface() {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       synthRef.current = window.speechSynthesis;
     }
+  }, []);
+
+  // Initialize shared state and load Core Memory
+  useEffect(() => {
+    initSharedState();
+    const memory = getCoreMemory();
+    setCoreMemory(memory);
+
+    // Subscribe to Core Memory updates from dashboard
+    const unsubscribe = onStateChange((type, data) => {
+      if (type === 'core_memory_updated') {
+        setCoreMemory(data);
+        console.log('Core Memory updated from dashboard:', data);
+      }
+    });
+
+    return unsubscribe;
   }, []);
 
   // Voice-guided onboarding - speak welcome message on first load
@@ -123,9 +148,21 @@ export default function VoiceInterface() {
         speak(responseText);
       }, 4500);
 
-      // Mock: return to idle
+      // Mock: return to idle and save conversation
       setTimeout(() => {
         playFeedbackSound(349, 0.2); // F4 note, completion sound
+
+        // Save conversation to shared state
+        const userMessage = 'What day is it today?';
+        const assistantMessage = 'Today is Wednesday, October 23rd. It\'s a beautiful autumn day.';
+        addConversation({
+          timestamp: new Date().toISOString(),
+          userMessage,
+          assistantMessage,
+          context: coreMemory?.context
+        });
+        console.log('Conversation saved to shared state');
+
         setState('idle');
         setTranscript('');
         setResponse('');
