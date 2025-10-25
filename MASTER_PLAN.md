@@ -977,6 +977,8 @@ export async function POST(
     );
 
     // 7. Save regenerated message
+    // TODO: Verify Letta response structure during testing
+    // May need: lettaResponse.messages.find(m => m.message_type === 'assistant_message')?.content
     const newMessage = await prisma.message.create({
       data: {
         conversationId: params.convId,
@@ -1757,7 +1759,7 @@ Return JSON:
 }`;
 
     const groqResponse = await groqClient.chat.completions.create({
-      model: 'moonshotai/kimi-k2-instruct',
+      model: 'moonshotai/kimi-k2-instruct-0905', // VERIFIED: Exact model string from Groq console screenshot
       messages: [{ role: 'user', content: analysisPrompt }],
       response_format: { type: 'json_object' },
       temperature: 0.5,
