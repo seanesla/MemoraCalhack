@@ -1,9 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import PainterlyWaveform from './PainterlyWaveform';
-import ConversationTranscript from './ConversationTranscript';
-import { useMockVoiceConnection } from '@/hooks/useMockVoiceConnection';
 import {
   getCoreMemory,
   addConversation,
@@ -22,13 +19,6 @@ export default function VoiceInterface() {
   const [hasSpokenWelcome, setHasSpokenWelcome] = useState(false);
   const [coreMemory, setCoreMemory] = useState<MemoraCoreMemory | null>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
-
-  const {
-    isConnected,
-    startListening,
-    stopListening,
-    audioLevel
-  } = useMockVoiceConnection();
 
   // Initialize speech synthesis
   useEffect(() => {
@@ -125,7 +115,6 @@ export default function VoiceInterface() {
       speak("I'm listening. Take your time.");
 
       setState('listening');
-      startListening();
 
       // Mock: simulate transcript appearing
       setTimeout(() => {
@@ -137,7 +126,6 @@ export default function VoiceInterface() {
         playFeedbackSound(523, 0.15); // C5 note
         speak("Let me think about that.");
         setState('thinking');
-        stopListening();
       }, 3000);
 
       // Mock: transition to speaking with response
@@ -181,7 +169,7 @@ export default function VoiceInterface() {
   const getInvitationText = () => {
     switch (state) {
       case 'idle':
-        return 'I\'m here with you...';
+        return 'Press the circle to talk to me';
       case 'listening':
         return 'Take your time';
       case 'thinking':
@@ -198,7 +186,7 @@ export default function VoiceInterface() {
   const getStatusColor = () => {
     switch (state) {
       case 'idle':
-        return 'rgba(212, 165, 116, 0.3)';
+        return 'rgba(212, 165, 116, 0.3)'; // #d4a574 warm gold
       case 'listening':
         return 'rgba(212, 165, 116, 0.6)';
       case 'thinking':
@@ -212,57 +200,89 @@ export default function VoiceInterface() {
 
   return (
     <div className="voice-interface">
-      {/* Main interaction area */}
-      <div className="interaction-container">
-        <button
-          className={`voice-trigger ${state}`}
-          onClick={handlePress}
-          onKeyDown={handleKeyDown}
-          disabled={state !== 'idle'}
-          aria-label={getInvitationText()}
-          tabIndex={0}
-        >
-          {/* Pulsing circles */}
-          <div className="pulse-ring"></div>
-          <div className="pulse-ring delay-1"></div>
-          <div className="pulse-ring delay-2"></div>
+      {/* Home button - always visible */}
+      <a href="/" className="home-button">
+        <svg className="home-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        </svg>
+        <span className="home-label">Home</span>
+      </a>
 
-          {/* Center dot */}
-          <div className="center-dot"></div>
-        </button>
-
-        {/* Invitation text */}
-        <p className="invitation-text">{getInvitationText()}</p>
-
-        {/* Audio visualization (shows when listening or speaking) */}
-        {(state === 'listening' || state === 'speaking') && (
-          <PainterlyWaveform
-            audioLevel={audioLevel}
-            isActive={state === 'listening' || state === 'speaking'}
-          />
-        )}
-
-        {/* Thinking animation */}
-        {state === 'thinking' && (
-          <div className="thinking-animation">
-            <div className="thinking-dot"></div>
-            <div className="thinking-dot"></div>
-            <div className="thinking-dot"></div>
+      {/* Idle state: Show circle button */}
+      {state === 'idle' && (
+        <div className="interaction-container">
+          {/* Welcome message */}
+          <div className="welcome-message">
+            <h1 className="welcome-title">Hi, I'm Memora</h1>
+            <p className="welcome-subtitle">I'm here to chat with you anytime</p>
           </div>
-        )}
-      </div>
 
-      {/* Transcript display */}
-      <ConversationTranscript
-        userText={transcript}
-        assistantText={response}
-        state={state}
-      />
+          <button
+            className={`voice-trigger ${state}`}
+            onClick={handlePress}
+            onKeyDown={handleKeyDown}
+            aria-label={getInvitationText()}
+            tabIndex={0}
+          >
+            {/* Minimal border circle */}
+            <div className="circle-border"></div>
 
-      {/* Connection status indicator (subtle, bottom corner) */}
-      <div className="connection-status">
-        <div className={`status-dot ${isConnected ? 'connected' : 'disconnected'}`}></div>
-      </div>
+            {/* Inner content */}
+            <div className="circle-inner">
+              <div className="circle-label">Speak</div>
+            </div>
+          </button>
+
+          {/* Example prompts */}
+          <div className="example-prompts">
+            <p className="prompts-label">You can ask me:</p>
+            <div className="prompts-grid">
+              <div className="prompt-item">"Where am I?"</div>
+              <div className="prompt-item">"Who are my grandchildren?"</div>
+              <div className="prompt-item">"I'm feeling worried"</div>
+              <div className="prompt-item">"Did I take my medicine?"</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Active state: Show chat interface */}
+      {state !== 'idle' && (
+        <div className="chat-interface">
+          <div className="chat-messages">
+            {/* User message */}
+            {transcript && (
+              <div className="message user-message">
+                <div className="message-label">You</div>
+                <div className="message-text">{transcript}</div>
+              </div>
+            )}
+
+            {/* Thinking indicator */}
+            {state === 'thinking' && (
+              <div className="message memora-message">
+                <div className="message-label">Memora</div>
+                <div className="thinking-animation">
+                  <div className="thinking-dot"></div>
+                  <div className="thinking-dot"></div>
+                  <div className="thinking-dot"></div>
+                </div>
+              </div>
+            )}
+
+            {/* Memora response */}
+            {response && (
+              <div className="message memora-message">
+                <div className="message-label">Memora</div>
+                <div className="message-text">{response}</div>
+              </div>
+            )}
+          </div>
+
+          {/* Status text */}
+          <div className="chat-status">{getInvitationText()}</div>
+        </div>
+      )}
 
       {/* Ambient context display (top corner, grounding information) */}
       <div className="ambient-context">
@@ -291,6 +311,40 @@ export default function VoiceInterface() {
           justify-content: center;
           padding: 2rem;
           z-index: 10;
+          background: #0a0a0a;
+        }
+
+        /* Film grain overlay - matching landing page */
+        .voice-interface::before {
+          content: '';
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2.5' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E");
+          pointer-events: none;
+          opacity: 0.4;
+          z-index: 1;
+        }
+
+        /* Vignette effect - matching landing page */
+        .voice-interface::after {
+          content: '';
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: radial-gradient(
+            ellipse at center,
+            transparent 0%,
+            transparent 40%,
+            rgba(10, 10, 10, 0.3) 70%,
+            rgba(10, 10, 10, 0.6) 100%
+          );
+          pointer-events: none;
+          z-index: 2;
         }
 
         .interaction-container {
@@ -299,120 +353,303 @@ export default function VoiceInterface() {
           flex-direction: column;
           align-items: center;
           gap: 3rem;
+          z-index: 10;
+          max-width: 900px;
+          width: 100%;
+        }
+
+        /* Welcome message */
+        .welcome-message {
+          text-align: center;
+          margin-bottom: 1rem;
+        }
+
+        .welcome-title {
+          font-family: 'Literata', Georgia, serif;
+          font-size: 3rem;
+          font-weight: 400;
+          color: #fafaf6;
+          margin-bottom: 1rem;
+          letter-spacing: 0.02em;
+        }
+
+        .welcome-subtitle {
+          font-family: 'Literata', Georgia, serif;
+          font-size: 1.25rem;
+          font-weight: 300;
+          color: rgba(250, 250, 246, 0.6);
+          letter-spacing: 0.02em;
+        }
+
+        /* Example prompts */
+        .example-prompts {
+          width: 100%;
+          text-align: center;
+        }
+
+        .prompts-label {
+          font-family: 'Inconsolata', monospace;
+          font-size: 0.75rem;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.15em;
+          color: rgba(212, 165, 116, 0.5);
+          margin-bottom: 1.5rem;
+        }
+
+        .prompts-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 1rem;
+          max-width: 600px;
+          margin: 0 auto;
+        }
+
+        .prompt-item {
+          font-family: 'Literata', Georgia, serif;
+          font-size: 1rem;
+          font-weight: 400;
+          color: rgba(250, 250, 246, 0.5);
+          padding: 1rem 1.5rem;
+          border: 1px solid rgba(212, 165, 116, 0.15);
+          border-radius: 4px;
+          background: rgba(212, 165, 116, 0.02);
+          transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+          font-style: italic;
+        }
+
+        .prompt-item:hover {
+          border-color: rgba(212, 165, 116, 0.3);
+          background: rgba(212, 165, 116, 0.05);
+          color: rgba(250, 250, 246, 0.7);
         }
 
         .voice-trigger {
           position: relative;
-          width: 200px;
-          height: 200px;
+          width: 240px;
+          height: 240px;
           background: transparent;
           border: none;
           cursor: pointer;
-          transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+          transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+          z-index: 10;
         }
 
         .voice-trigger:hover:not(:disabled) {
-          transform: scale(1.05);
+          transform: scale(1.02);
         }
 
         .voice-trigger:disabled {
           cursor: default;
         }
 
-        /* Pulsing rings */
-        .pulse-ring {
+        /* Minimal border circle */
+        .circle-border {
           position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
+          top: 0;
+          left: 0;
           width: 100%;
           height: 100%;
-          border: 2px solid ${getStatusColor()};
+          border: 1px solid rgba(212, 165, 116, 0.3);
           border-radius: 50%;
-          opacity: 0;
-          animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+          transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
         }
 
-        .pulse-ring.delay-1 {
-          animation-delay: 1s;
+        .voice-trigger:hover:not(:disabled) .circle-border {
+          border-color: rgba(212, 165, 116, 0.5);
+          box-shadow:
+            0 0 40px rgba(212, 165, 116, 0.1),
+            inset 0 0 40px rgba(212, 165, 116, 0.05);
         }
 
-        .pulse-ring.delay-2 {
-          animation-delay: 2s;
+        .voice-trigger.idle .circle-border {
+          animation: breathe 4s ease-in-out infinite;
         }
 
-        @keyframes pulse {
-          0% {
-            transform: translate(-50%, -50%) scale(0.8);
+        @keyframes breathe {
+          0%, 100% {
+            opacity: 0.6;
+            transform: scale(1);
+          }
+          50% {
             opacity: 1;
-          }
-          100% {
-            transform: translate(-50%, -50%) scale(1.4);
-            opacity: 0;
+            transform: scale(1.01);
           }
         }
 
-        /* Center dot */
-        .center-dot {
+        /* Inner content */
+        .circle-inner {
           position: absolute;
           top: 50%;
           left: 50%;
           transform: translate(-50%, -50%);
-          width: 80px;
-          height: 80px;
-          background: radial-gradient(
-            circle,
-            rgba(212, 165, 116, 0.4) 0%,
-            rgba(212, 165, 116, 0.2) 50%,
-            transparent 100%
-          );
-          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+          height: 100%;
+        }
+
+        .circle-label {
+          font-family: 'Inconsolata', monospace;
+          font-size: 0.875rem;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.2em;
+          color: rgba(212, 165, 116, 0.7);
+          transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .voice-trigger:hover:not(:disabled) .circle-label {
+          color: rgba(212, 165, 116, 0.9);
+          letter-spacing: 0.25em;
+        }
+
+        /* Active states */
+        .voice-trigger.listening .circle-border,
+        .voice-trigger.speaking .circle-border {
+          border-color: rgba(212, 165, 116, 0.6);
           box-shadow:
-            0 0 40px rgba(212, 165, 116, 0.3),
-            inset 0 0 20px rgba(212, 165, 116, 0.2);
+            0 0 60px rgba(212, 165, 116, 0.15),
+            inset 0 0 60px rgba(212, 165, 116, 0.08);
+          animation: pulse-subtle 2s ease-in-out infinite;
         }
 
-        .voice-trigger.listening .center-dot,
-        .voice-trigger.speaking .center-dot {
-          animation: glow 2s ease-in-out infinite alternate;
+        .voice-trigger.listening .circle-label,
+        .voice-trigger.speaking .circle-label {
+          color: rgba(212, 165, 116, 1);
         }
 
-        @keyframes glow {
-          from {
-            box-shadow:
-              0 0 40px rgba(212, 165, 116, 0.3),
-              inset 0 0 20px rgba(212, 165, 116, 0.2);
+        @keyframes pulse-subtle {
+          0%, 100% {
+            opacity: 0.8;
           }
-          to {
-            box-shadow:
-              0 0 60px rgba(212, 165, 116, 0.6),
-              inset 0 0 30px rgba(212, 165, 116, 0.4);
+          50% {
+            opacity: 1;
           }
         }
 
-        /* Invitation text */
+        .voice-trigger.thinking .circle-border {
+          border-color: rgba(212, 165, 116, 0.4);
+          opacity: 0.6;
+        }
+
+        /* Invitation text - editorial serif like landing page */
         .invitation-text {
-          font-family: 'Space Grotesk', sans-serif;
-          font-size: 1.5rem;
-          font-weight: 300;
+          font-family: 'Literata', Georgia, serif;
+          font-size: 1.75rem;
+          font-weight: 400;
           color: #fafaf6;
           text-align: center;
-          opacity: 0.7;
-          letter-spacing: 0.05em;
-          text-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
+          opacity: 0.85;
+          letter-spacing: 0.02em;
+          text-shadow: 0 2px 30px rgba(0, 0, 0, 0.8);
           transition: opacity 0.5s ease;
+          line-height: 1.5;
+          max-width: 600px;
+          z-index: 10;
+          position: relative;
+        }
+
+        /* Chat interface */
+        .chat-interface {
+          position: relative;
+          z-index: 10;
+          width: 100%;
+          max-width: 800px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 2rem;
+          animation: fadeIn 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .chat-messages {
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          gap: 2rem;
+        }
+
+        .message {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+          animation: slideIn 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: translateX(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
+        .message-label {
+          font-family: 'Inconsolata', monospace;
+          font-size: 0.75rem;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.15em;
+          color: rgba(212, 165, 116, 0.6);
+        }
+
+        .message-text {
+          font-family: 'Literata', Georgia, serif;
+          font-size: 1.5rem;
+          font-weight: 400;
+          line-height: 1.6;
+          color: #fafaf6;
+          padding: 1.5rem 2rem;
+          border: 1px solid rgba(212, 165, 116, 0.2);
+          border-radius: 4px;
+          background: rgba(212, 165, 116, 0.03);
+        }
+
+        .user-message .message-text {
+          border-color: rgba(250, 250, 246, 0.2);
+          background: rgba(250, 250, 246, 0.03);
+        }
+
+        .memora-message .message-label {
+          color: rgba(212, 165, 116, 0.8);
+        }
+
+        .chat-status {
+          font-family: 'Inconsolata', monospace;
+          font-size: 0.875rem;
+          font-weight: 500;
+          text-transform: uppercase;
+          letter-spacing: 0.15em;
+          color: rgba(212, 165, 116, 0.5);
+          margin-top: 1rem;
         }
 
         /* Thinking animation */
         .thinking-animation {
           display: flex;
           gap: 12px;
-          margin-top: 2rem;
+          padding: 1.5rem 2rem;
         }
 
         .thinking-dot {
-          width: 12px;
-          height: 12px;
+          width: 8px;
+          height: 8px;
           background: rgba(212, 165, 116, 0.6);
           border-radius: 50%;
           animation: thinking-bounce 1.4s ease-in-out infinite;
@@ -437,34 +674,56 @@ export default function VoiceInterface() {
           }
         }
 
-        /* Connection status */
-        .connection-status {
+        /* Home button */
+        .home-button {
           position: fixed;
-          bottom: 2rem;
-          right: 2rem;
+          top: 2rem;
+          left: 2rem;
           display: flex;
           align-items: center;
           gap: 0.5rem;
+          padding: 0.75rem 1.25rem;
+          border: 1px solid rgba(212, 165, 116, 0.3);
+          border-radius: 4px;
+          background: rgba(10, 10, 10, 0.8);
+          backdrop-filter: blur(10px);
+          text-decoration: none;
+          transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
           z-index: 100;
         }
 
-        .status-dot {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          transition: all 0.3s ease;
+        .home-button:hover {
+          border-color: rgba(212, 165, 116, 0.6);
+          background: rgba(10, 10, 10, 0.95);
+          transform: translateX(-2px);
         }
 
-        .status-dot.connected {
-          background: rgba(100, 220, 150, 0.8);
-          box-shadow: 0 0 10px rgba(100, 220, 150, 0.5);
+        .home-icon {
+          width: 18px;
+          height: 18px;
+          color: rgba(212, 165, 116, 0.7);
+          transition: color 0.3s cubic-bezier(0.23, 1, 0.32, 1);
         }
 
-        .status-dot.disconnected {
-          background: rgba(220, 100, 100, 0.5);
+        .home-button:hover .home-icon {
+          color: rgba(212, 165, 116, 0.9);
         }
 
-        /* Ambient context display */
+        .home-label {
+          font-family: 'Inconsolata', monospace;
+          font-size: 0.75rem;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.15em;
+          color: rgba(212, 165, 116, 0.7);
+          transition: color 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .home-button:hover .home-label {
+          color: rgba(212, 165, 116, 0.9);
+        }
+
+        /* Ambient context display - monospace like landing page UI */
         .ambient-context {
           position: fixed;
           top: 2rem;
@@ -472,42 +731,47 @@ export default function VoiceInterface() {
           display: flex;
           flex-direction: column;
           align-items: flex-end;
-          gap: 0.25rem;
-          font-family: 'Space Grotesk', sans-serif;
+          gap: 0.375rem;
+          font-family: 'Inconsolata', monospace;
           font-size: 0.875rem;
           color: rgba(250, 250, 246, 0.5);
           text-align: right;
           z-index: 100;
-          letter-spacing: 0.02em;
+          letter-spacing: 0.05em;
         }
 
         .context-day {
-          font-weight: 500;
-          font-size: 0.75rem;
+          font-weight: 600;
+          font-size: 0.7rem;
           text-transform: uppercase;
-          letter-spacing: 0.1em;
-          opacity: 0.7;
+          letter-spacing: 0.15em;
+          opacity: 0.6;
+          color: rgba(250, 250, 246, 0.4);
         }
 
         .context-date {
           font-weight: 400;
-          font-size: 0.9rem;
+          font-size: 0.875rem;
+          color: rgba(250, 250, 246, 0.6);
         }
 
         .context-time {
           font-weight: 300;
-          font-size: 1.25rem;
-          color: rgba(212, 165, 116, 0.7);
+          font-size: 1.5rem;
+          color: rgba(212, 165, 116, 0.8);
           margin-top: 0.25rem;
+          letter-spacing: 0.05em;
         }
 
         .context-weather {
           font-weight: 400;
-          font-size: 0.75rem;
+          font-size: 0.7rem;
           margin-top: 0.5rem;
           padding-top: 0.5rem;
-          border-top: 1px solid rgba(250, 250, 246, 0.1);
-          opacity: 0.6;
+          border-top: 1px solid rgba(250, 250, 246, 0.08);
+          opacity: 0.5;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
         }
 
         /* Responsive */
