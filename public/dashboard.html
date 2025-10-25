@@ -171,6 +171,17 @@
             display: flex;
             align-items: center;
             gap: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .user-info:hover {
+            opacity: 0.8;
+        }
+
+        .user-info:active {
+            transform: scale(0.98);
         }
 
         .user-avatar {
@@ -197,6 +208,57 @@
             font-size: 18px;
             color: #FFFFFF;
             opacity: 0.9;
+        }
+
+        /* User Dropdown Menu */
+        .user-dropdown {
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            right: 0;
+            margin-bottom: 12px;
+            background: #000000;
+            border: 2px solid #FFFFFF;
+            border-radius: 8px;
+            padding: 8px;
+            display: none;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.2s ease;
+        }
+
+        .user-dropdown.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .user-dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            color: #FFFFFF;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            background: transparent;
+            width: 100%;
+            text-align: left;
+        }
+
+        .user-dropdown-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .user-dropdown-item svg {
+            width: 20px;
+            height: 20px;
+            stroke-width: 2;
         }
 
         /* Main Content */
@@ -1817,7 +1879,15 @@
             </ul>
 
             <div class="user-section">
-                <div class="user-info">
+                <div class="user-info" id="user-menu-toggle">
+                    <div class="user-dropdown" id="user-dropdown">
+                        <button class="user-dropdown-item" onclick="window.location.href='/sign-in'">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                            </svg>
+                            Sign Out
+                        </button>
+                    </div>
                     <div class="user-avatar">AS</div>
                     <div class="user-details">
                         <h4>Ava Smith</h4>
@@ -2689,6 +2759,28 @@
                 console.log('Navigated to:', pageName);
             });
         });
+
+        // User menu toggle
+        const userMenuToggle = document.getElementById('user-menu-toggle');
+        const userDropdown = document.getElementById('user-dropdown');
+
+        if (userMenuToggle && userDropdown) {
+            userMenuToggle.addEventListener('click', (e) => {
+                // Don't close if clicking inside dropdown
+                if (e.target.closest('.user-dropdown')) {
+                    return;
+                }
+                userDropdown.classList.toggle('active');
+                console.log('User menu toggled');
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!userMenuToggle.contains(e.target)) {
+                    userDropdown.classList.remove('active');
+                }
+            });
+        }
 
         // Card interactions with immediate feedback
         document.querySelectorAll('.card, .memory-card').forEach(card => {
