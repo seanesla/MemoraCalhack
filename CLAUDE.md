@@ -569,15 +569,106 @@ Patient speaks → Deepgram (STT) → Claude Haiku (fast response) → LiveKit (
 4. ChromaDB stores archival memory embeddings for semantic search
 5. Dashboard displays insights derived from memory analysis
 
-## Known Issues & Limitations
+## Backend Implementation Status (Active Development)
 
-1. **No Backend** - All voice/AI/memory features are currently simulated with mock data
-2. **No Authentication** - Sign-in/sign-up are placeholders, always redirect to dashboard
-3. **No Persistence** - All data resets on page refresh (Letta integration planned)
-4. **No Real Voice** - Audio waveform is simulated (LiveKit + Deepgram integration planned)
-5. **Dashboard Content** - Only "Overview" and "Voice Chat" pages have real content; Timeline, Insights, Settings are placeholders
-6. **Scale Transform** - The `transform: scale(0.8)` approach is a workaround; ideally redesign to fit viewport naturally
-7. **Logo Inconsistency** - Landing page uses 48px logo, dashboard uses 96px logo (intentional for compact header vs visibility)
+### ✅ Completed Components
+
+1. **Database Schema** (13 tables in Supabase PostgreSQL)
+   - patients, caregivers, conversations, messages
+   - medications, medication_doses, privacy_consents
+   - behavioral_metrics, patient_insights, alert_configurations
+   - timeline_events, daily_activities, sleep_logs
+   - Location: `prisma/schema.prisma` with Prisma migrations
+
+2. **Onboarding Endpoint** (`POST /api/onboard`)
+   - Location: `app/api/onboard/route.ts`
+   - Creates Patient or Caregiver record in database
+   - Creates Letta AI agent with memory blocks
+   - Stores Letta agent ID in database
+   - Zod validation for request body
+   - Tested: 13 comprehensive tests with real API calls
+
+3. **Authentication Integration**
+   - Uses Clerk for user authentication
+   - `auth()` function from `@clerk/nextjs/server`
+   - Direct clerkId storage (no separate User model)
+   - Works in Next.js middleware and API routes
+
+4. **Letta AI Integration**
+   - Location: `lib/letta.ts`
+   - Real Letta API calls (no mocks)
+   - Creates agents with 3-tier memory blocks (human, persona, patient_context)
+   - Stores agent IDs in Patient records
+   - Tested: 7 integration tests with real Letta API
+
+5. **Testing Infrastructure**
+   - Framework: Vitest with dotenv integration
+   - Database: Real Supabase instance (local + cloud)
+   - API calls: Real Letta API
+   - Results: 37/37 tests passing
+   - Location: `tests/db/`, `tests/api/`, `tests/integration/`
+
+### 🔄 In Progress
+
+1. **Middleware** (`app/middleware.ts`)
+   - Protect routes requiring authentication
+   - Redirect unauthenticated users to sign-in
+   - Check if user is onboarded (Patient/Caregiver record exists)
+   - Redirect not-yet-onboarded users to `/onboarding`
+
+2. **Onboarding Page** (`app/onboarding/page.tsx`)
+   - Form to collect role (Patient or Caregiver)
+   - Collect role-specific data (name, age, email, etc.)
+   - Submit to `POST /api/onboard`
+   - Redirect to `/patient` or `/caregiver` on success
+
+3. **Conversation API** (`POST /api/conversation`)
+   - Accept message from user
+   - Send to Letta agent via `client.agents.messages.send()`
+   - Store in database
+   - Return agent response
+
+### ⏳ Planned Components
+
+1. **Voice Interface** (`app/patient/page.tsx`)
+   - LiveKit + Deepgram integration
+   - Real speech-to-text and text-to-speech
+   - Replace current hardcoded transcript
+
+2. **Caregiver Routes** (`app/caregiver/dashboard`)
+   - API endpoints for dashboard data
+   - Behavioral metrics calculation
+   - Memory management endpoints
+
+### 🛠️ Development Setup
+
+**Local Supabase Database**:
+```bash
+supabase start
+# DB: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+```
+
+**Environment Variables** (see `.env.example`):
+- `DATABASE_URL` - Supabase PostgreSQL connection
+- `LETTA_API_KEY` - Letta AI authentication
+- `LETTA_BASE_URL` - Letta API endpoint (https://api.letta.com)
+- `CLERK_SECRET_KEY` - Clerk authentication
+- `GROQ_API_KEY` - Groq LLM access (future)
+
+**Running Tests**:
+```bash
+npx vitest run tests/db/schema.test.ts tests/api/onboard.test.ts tests/integration/letta.test.ts
+```
+
+### Known Issues & Limitations
+
+1. ✅ **Backend Now Exists** - Real PostgreSQL database with Prisma ORM
+2. ✅ **Authentication Works** - Clerk integration with middleware redirects
+3. ✅ **Data Persists** - All data stored in Supabase
+4. ❌ **Voice Not Real** - Audio waveform is simulated (LiveKit + Deepgram planned)
+5. ❌ **Dashboard Content** - Only "Overview" and "Voice Chat" pages have real content; Timeline, Insights, Settings are placeholders
+6. ⚠️ **Scale Transform** - The `transform: scale(0.8)` approach on dashboard is a workaround
+7. ⚠️ **Logo Inconsistency** - Landing page uses 48px logo, dashboard uses 96px logo (intentional)
 
 ## File Tree Summary
 

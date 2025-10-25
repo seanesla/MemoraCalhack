@@ -66,19 +66,31 @@ Memora implements two distinct interfaces designed for different users:
 - **Radix UI** - Accessible component primitives
 - **date-fns 3.6.0** - Date formatting
 
-### AI & Backend (Planned)
-- **Groq (Kimi K2)** - 280k context window for deep memory analysis and pattern detection
-- **Claude (Haiku 4.5)** - Ultra-fast inference for real-time patient conversations
-- **Context7** - Up-to-date documentation retrieval for AI integrations
-- **LiveKit** - Real-time voice communication
-- **Deepgram** - Speech-to-text processing
+### Backend (In Development)
+- **Supabase PostgreSQL** - Production database (local dev instance + cloud)
+- **Prisma ORM** - Database schema & migrations
+- **Clerk** - User authentication (email, OAuth)
 - **Letta** - Persistent 3-tier memory management (Core, Archival, Alert)
-- **ChromaDB** - Vector database for Letta's archival memory storage
-- **Clerk** - User authentication
+- **Groq (Kimi K2)** - 280k context window for deep memory analysis
+- **Claude (Haiku 4.5)** - Ultra-fast inference for real-time conversations
+- **Context7** - Up-to-date API documentation
+- **LiveKit** - Real-time voice communication (planned)
+- **Deepgram** - Speech-to-text processing (planned)
 
-**Multi-Model Strategy**: Kimi K2 handles complex analysis with massive context (memory updates, pattern detection), while Claude Haiku provides instant conversational responses. Letta manages the 3-tier memory architecture with ChromaDB providing persistent vector storage for semantic search over long-term memories. This hybrid approach optimizes for both quality and speed.
+### Testing Infrastructure
+- **Vitest** - Unit & integration test framework
+- **Real API testing** - All tests use real Letta API, real Supabase database (no mocks)
+- **TDD approach** - Tests written before implementation
 
-**Note**: Backend is not implemented. All features are simulated with mock data.
+**Current Status**:
+- ✅ Database schema: 13 tables (Prisma + Supabase)
+- ✅ Onboarding endpoint: Creates Patient/Caregiver + Letta agents (POST /api/onboard)
+- ✅ All 37 tests passing with real APIs and real database
+- 🔄 Middleware: In progress (onboarding redirect logic)
+- ⏳ Conversation API: Creates messages and sends to Letta agents
+- ⏳ Voice interface: LiveKit + Deepgram integration
+
+**Multi-Model Strategy**: Kimi K2 handles complex analysis with massive context (memory updates, pattern detection), while Claude Haiku provides instant conversational responses. Letta manages the 3-tier memory architecture with ChromaDB providing persistent vector storage for semantic search over long-term memories.
 
 ---
 
@@ -87,8 +99,10 @@ Memora implements two distinct interfaces designed for different users:
 ### Prerequisites
 - Node.js 18+
 - npm or yarn
+- Supabase CLI (`brew install supabase/tap/supabase`)
+- Environment variables (see `.env.example`)
 
-### Installation
+### Installation & Local Development Setup
 
 1. Clone the repository
 ```bash
@@ -101,12 +115,50 @@ cd memora
 npm install
 ```
 
-3. Run development server
+3. Start local Supabase instance
+```bash
+supabase start
+# Returns PostgreSQL connection details
+# DB URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+```
+
+4. Create `.env` file (copy `.env.example` and fill in values)
+```bash
+cp .env.example .env
+# Update with local Supabase credentials and API keys
+```
+
+5. Apply database migrations
+```bash
+npx prisma db push
+```
+
+6. Run development server
 ```bash
 npm run dev
 ```
 
-4. Open [http://localhost:3000](http://localhost:3000)
+7. Open [http://localhost:3000](http://localhost:3000)
+
+### Running Tests
+
+All tests use real APIs and real database (no mocks):
+
+```bash
+# Run all 37 tests (database, API, Letta integration)
+npx vitest run tests/db/schema.test.ts tests/api/onboard.test.ts tests/integration/letta.test.ts
+
+# Run specific test file
+npx vitest run tests/api/onboard.test.ts
+
+# Watch mode for development
+npx vitest tests/api/onboard.test.ts
+```
+
+**Test Results**: 37/37 passing
+- 17 database schema tests (Prisma + Supabase)
+- 13 onboarding API tests (with Letta agent creation)
+- 7 Letta integration tests (real API calls)
 
 ### Build for Production
 
