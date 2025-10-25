@@ -2677,7 +2677,7 @@
             </div>
 
             <!-- Voice Chat Page -->
-            <div id="voice-page" class="page">
+            <div id="voice-page" class="page" data-patient-id="cmh6xjz9q00008omek5epf02t">
                 <div class="page-header">
                     <h1 class="page-title">Talk with Memora</h1>
                     <p class="page-subtitle">Ask me anything about your day, memories, or activities</p>
@@ -3495,61 +3495,72 @@
             }, 2500);
         }
 
-        // Handle voice button click
+        // Voice chat state - track conversation for continued messages
+        let currentConversationId = null;
+        const voicePage = document.getElementById('voice-page');
+        const patientId = voicePage ? voicePage.dataset.patientId : null;
+
+        // Disable voice button (LiveKit integration in future)
         if (voiceButton) {
-            voiceButton.addEventListener('click', () => {
-                if (voicePageState !== 'idle') return;
-
-                // Change to listening state
-                voicePageState = 'listening';
-                voiceButton.classList.add('listening');
-
-                // Mock: Simulate user speaking
-                setTimeout(() => {
-                    voicePageState = 'thinking';
-
-                    // Add user message
-                    addMessage('user', "What activities did I do today?");
-                }, 2000);
-
-                // Mock: Show assistant response
-                setTimeout(() => {
-                    voicePageState = 'responding';
-
-                    addMessage('assistant', "Today you had a wonderful day! You took a 30-minute walk in the morning, had a video call with your grandchildren at 2:15 PM, and took your memory medication at 9 AM. Your mood has been cheerful all day.");
-                }, 3500);
-
-                // Mock: Return to idle
-                setTimeout(() => {
-                    voicePageState = 'idle';
-                    voiceButton.classList.remove('listening');
-                }, 5000);
-            });
+            voiceButton.disabled = true;
+            voiceButton.title = 'Voice mode coming soon';
+            voiceButton.style.opacity = '0.5';
         }
 
-        // Handle text input submission
-        function handleVoicePageTextSubmit() {
+        // Handle text input submission with real API
+        async function handleVoicePageTextSubmit() {
             const text = voicePageTextInput.value.trim();
             if (!text || voicePageState !== 'idle') return;
 
-            // Add user message
-            addMessage('user', text);
+            // Add user message to display
+            const messageId = addMessage('user', text);
             voicePageTextInput.value = '';
 
             // Show thinking state
             voicePageState = 'thinking';
 
-            // Mock response
-            setTimeout(() => {
-                voicePageState = 'responding';
+            try {
+                // Call real API
+                const response = await fetch('/api/conversation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include', // Include Clerk auth cookies
+                    body: JSON.stringify({
+                        message: text,
+                        conversationId: currentConversationId,
+                        patientId: patientId  // Caregiver needs to specify patient
+                    })
+                });
 
-                addMessage('assistant', `You asked: "${text}". This is a demo response. In the full application, Memora would use AI to answer your questions about your day, activities, and memories based on your personal data.`);
-            }, 1500);
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || `HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // Store conversationId for next message
+                if (!currentConversationId) {
+                    currentConversationId = data.conversationId;
+                }
+
+                // Show assistant response
+                voicePageState = 'responding';
+                addMessage('assistant', data.response);
+
+            } catch (error) {
+                console.error('Voice chat error:', error);
+                voicePageState = 'idle';
+
+                // Show error to user
+                addMessage('assistant', `Sorry, I encountered an error: ${error.message}. Please try again.`);
+                return;
+            }
 
             // Return to idle
-            setTimeout(() => {
-                voicePageState = 'idle';
-            }, 2500);
+            voicePageState = 'idle';
         }
 
         if (voiceSendButton) {

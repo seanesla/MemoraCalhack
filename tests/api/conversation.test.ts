@@ -40,7 +40,11 @@ describe('Conversation API Tests', () => {
       where: { clerkId: 'clerk_conversation_test' },
     });
     await prisma.caregiver.deleteMany({
-      where: { clerkId: 'clerk_conversation_test' },
+      where: {
+        clerkId: {
+          in: ['clerk_conversation_test', 'clerk_caregiver_test']
+        }
+      },
     });
 
     // Create test patient with Letta agent
@@ -314,9 +318,6 @@ describe('Conversation API Tests', () => {
       });
       expect(conversation?.patientId).toBe(testPatientId);
       expect(conversation?.caregiverId).toBe(caregiver.id);
-
-      // Clean up
-      await prisma.caregiver.deleteMany({ where: { clerkId: 'clerk_caregiver_test' } });
     });
   });
 });
