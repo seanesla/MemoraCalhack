@@ -27,7 +27,6 @@ const isPublicRoute = createRouteMatcher([
   '/sign-in',
   '/sign-up',
   '/memora-cinematic.html',
-  '/dashboard.html',
   '/favicon.ico',
   '/manifest.json',
   '/service-worker.js',
@@ -40,6 +39,7 @@ const isProtectedRoute = createRouteMatcher([
   '/patient(.*)',
   '/caregiver(.*)',
   '/onboarding(.*)',
+  '/dashboard.html',  // Caregiver dashboard - requires authentication
   '/api/onboard',
   '/api/conversation',
   '/api/patients(.*)',
@@ -124,6 +124,12 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
 
   if (pathname.startsWith('/caregiver') && userRole !== 'caregiver') {
     // Non-caregiver trying to access /caregiver
+    const redirectUrl = userRole === 'patient' ? '/patient' : '/onboarding';
+    return NextResponse.redirect(new URL(redirectUrl, request.url));
+  }
+
+  if (pathname === '/dashboard.html' && userRole !== 'caregiver') {
+    // Non-caregiver trying to access dashboard
     const redirectUrl = userRole === 'patient' ? '/patient' : '/onboarding';
     return NextResponse.redirect(new URL(redirectUrl, request.url));
   }
