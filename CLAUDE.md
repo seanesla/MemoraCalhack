@@ -22,23 +22,73 @@ Memora is a **frontend-only Next.js PWA prototype** for a dementia care companio
   - Voice-first interaction (large, simple UI)
   - Orientation cues (date, time, weather)
   - "I'm here with you" reassuring language
-  - NO surveillance data shown
-  - NO cognitive performance metrics
-  - NO wandering alerts or location tracking events
-- **Why**: Showing a dementia patient their own "engagement scores" or "wandering alerts" is **shame-inducing and harmful**. The patient interface preserves dignity.
+  - **Privacy Dashboard** - John controls what data caregivers can see
+    - Toggle switches for: Conversations, Location Tracking, Medication Tracking, Activity Monitoring
+    - Warning notifications when toggling privacy settings (e.g., "Ava will be notified. Wandering alerts will be disabled.")
+    - All changes logged and caregivers notified via consent notifications
+  - NO cognitive performance metrics shown to patient
+  - NO surveillance metrics visible (alerts, tracking events hidden from this interface)
+- **Why**: Showing a dementia patient caregiver surveillance metrics (location tracking, behavioral analytics) is **harmful**. The patient interface provides supportive companionship with privacy controls.
 
 #### **Caregiver Dashboard** (`/dashboard.html`)
 - **User**: Ava Smith (caregiver/family member)
-- **Purpose**: Monitoring and insights
+- **Purpose**: Monitoring and insights with transparency
 - **Features**:
+  - **Consent Notifications** - When John changes privacy settings, Ava sees notifications explaining:
+    - What John changed
+    - When the change occurred
+    - Impact on caregiver tools (e.g., "Walking Monitoring alerts will not function while this is disabled")
+  - **AI Reasoning Explanations** - All memory system decisions show transparent explanations:
+    - Technical metrics (e.g., "Referenced in 85% of conversations", "<200ms retrieval time")
+    - Detection algorithms (e.g., "Tone analysis: 8.2/10")
+    - Calibration data (e.g., "110m threshold based on John's walking pattern analysis (last 30 days): 95% of walks stay within this radius")
+  - **Behavioral Metrics** (replaces vague "engagement score"):
+    - Response Time (1.8s vs 2.1s baseline)
+    - Unprompted Memory Recall (2 instances with specific examples)
+    - Temporal Orientation (2 date checks, within normal range)
+    - Question Repetition (5× vs 2-3× baseline, with actionable insight)
   - Timeline of events (medication, alerts, activities)
-  - Memory system management (3-tier architecture)
+  - Memory system management (3-tier architecture with reasoning)
   - Voice Chat interface (purple accents, edit functionality)
-  - AI-generated insights and pattern detection
-  - Alert configuration and settings
-- **Why**: Caregivers need analytics to provide better care, but this data should NEVER be visible to the patient.
+  - Alert configuration
+- **Why**: Caregivers need analytics to provide better care. Transparency-first design: honest about data collection, explicit about algorithms, patient has consent controls.
 
 **In Demo**: The dashboard shows "Ava Smith - Caregiver" in the sidebar, not "John Smith - Patient". This emphasizes that caregivers use this interface, not patients.
+
+### Transparency-First Design Philosophy
+
+**Core Principle**: Be honest about what the system does. Dementia care involves surveillance - location tracking, behavioral monitoring, conversation analysis. **Don't hide it. Don't euphemize it. Make it transparent and consensual.**
+
+**Implementation**:
+
+1. **Patient Privacy Controls** (`components/VoiceInterface.tsx`)
+   - Patient has granular toggles for all data collection
+   - Each toggle shows clear warning about consequences
+   - Caregivers are immediately notified of changes
+   - No data collection happens without patient awareness
+
+2. **AI Reasoning Explanations** (`public/dashboard.html`, `data/mock-data.ts`)
+   - Every memory decision shows WHY it was made
+   - Technical metrics exposed (retrieval time, usage frequency, tone scores)
+   - Algorithm calibration data visible (baseline thresholds, detection patterns)
+   - Acknowledges uncertainty ("May indicate anxiety" not "Indicates anxiety")
+
+3. **Consent Notifications** (`public/dashboard.html`)
+   - When patient changes privacy settings, caregiver sees notification
+   - Shows what changed, when, and impact on monitoring tools
+   - Respectful language: "John chose to disable Location Tracking" not "Location disabled"
+
+4. **Behavioral Metrics Replace Vanity Scores** (`public/dashboard.html`)
+   - No "9.2/10 engagement score" - meaningless number
+   - Specific, observable behaviors: response time, memory recall, orientation
+   - Comparison to patient's own baseline, not generic ideal
+   - Honest clinical notes with actionable insights
+
+**Language Guidelines**:
+- ❌ "boundary-respecting communication" → ✅ "Caregiver insights with patient consent controls"
+- ❌ "Pattern detection without intrusive surveillance" → ✅ "Behavioral pattern analysis with transparent data collection"
+- ❌ "preserving dignity" (while building surveillance) → ✅ "providing support" (honest about capabilities)
+- ❌ "NO surveillance data" → ✅ "Privacy dashboard - John controls what data caregivers see"
 
 ## Development Commands
 
