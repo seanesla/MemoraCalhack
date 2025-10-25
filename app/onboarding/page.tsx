@@ -109,7 +109,7 @@ export default function OnboardingPage() {
         if (response.status === 409) {
           setError('You have already completed onboarding. Redirecting...');
           setTimeout(() => {
-            router.push(role === 'patient' ? '/patient' : '/caregiver');
+            router.push(role === 'patient' ? '/patient' : '/dashboard.html');
           }, 2000);
           return;
         }
@@ -132,7 +132,7 @@ export default function OnboardingPage() {
         console.warn('Onboarding warning:', data.warning);
       }
 
-      router.push(role === 'patient' ? '/patient' : '/caregiver');
+      router.push(role === 'patient' ? '/patient' : '/dashboard.html');
     } catch (err) {
       console.error('Onboarding error:', err);
       setError('Network error. Please check your connection and try again.');
