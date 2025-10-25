@@ -55,6 +55,9 @@ model Caregiver {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
+  // Relationships
+  conversations Conversation[]
+
   @@map("caregivers")
 }
 
@@ -63,20 +66,24 @@ model Caregiver {
 // ============================================================================
 
 model Conversation {
-  id          String    @id @default(cuid())
-  patientId   String
-  patient     Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  id           String     @id @default(cuid())
+  patientId    String
+  patient      Patient    @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
-  title       String?
-  startedAt   DateTime  @default(now())
-  endedAt     DateTime?
-  duration    Int?      // seconds
+  caregiverId  String?
+  caregiver    Caregiver? @relation(fields: [caregiverId], references: [id], onDelete: SetNull)
+
+  title        String?
+  startedAt    DateTime   @default(now())
+  lastMessageAt DateTime  @default(now())
+  endedAt      DateTime?
+  duration     Int?       // seconds
 
   // Relationships
-  messages    Message[]
+  messages     Message[]
 
   @@map("conversations")
-  @@index([patientId, startedAt(sort: Desc)])
+  @@index([patientId, lastMessageAt(sort: Desc)])
 }
 
 model Message {
@@ -89,6 +96,8 @@ model Message {
   timestamp      DateTime     @default(now())
   edited         Boolean      @default(false)
   editedAt       DateTime?
+
+  lettaMessageId String?      // Letta's internal message ID for tracking
 
   @@map("messages")
   @@index([conversationId, timestamp])
