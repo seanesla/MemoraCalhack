@@ -2068,12 +2068,12 @@
                             <div class="insights-title">Today's Insights</div>
                         </div>
                         <div class="insights-content">
-                            <p>John showed strong engagement during social interactions today.</p>
+                            <p data-original="John showed strong engagement during social interactions today." data-simple="John was very social today.">John showed strong engagement during social interactions today.</p>
 
-                            <p>He responded well during the video call. He mentioned specific memories about his grandchildren.</p>
+                            <p data-original="He responded well during the video call. He mentioned specific memories about his grandchildren." data-simple="He talked about his grandchildren on the video call.">He responded well during the video call. He mentioned specific memories about his grandchildren.</p>
 
-                            <p>His activity levels match his typical patterns. He completed his morning walk without prompting.</p>
-                            
+                            <p data-original="His activity levels match his typical patterns. He completed his morning walk without prompting." data-simple="He went for his morning walk as usual.">His activity levels match his typical patterns. He completed his morning walk without prompting.</p>
+
                             <div class="insight-tags">
                                 <span class="insight-tag">Social engagement up</span>
                                 <span class="insight-tag">Memory recall strong</span>
@@ -3031,11 +3031,14 @@
 
             if (isSimplified) {
                 // Simplify all text
-                const selectors = ['.event-type', '.event-summary', '.card-label', '.card-value', '.card-subtitle', '.config-label', '.config-value', '.alert-config-name', '.insight-item-text', '.archival-title', '.core-memory-label', '.event-details-item', '.page-subtitle', '.insight-title', '.settings-title', '.settings-description'];
+                const selectors = ['.event-type', '.event-summary', '.card-label', '.card-value', '.card-subtitle', '.config-label', '.config-value', '.alert-config-name', '.insight-item-text', '.archival-title', '.core-memory-label', '.event-details-item', '.page-subtitle', '.insight-title', '.settings-title', '.settings-description', '.insights-content p'];
 
                 selectors.forEach(selector => {
                     document.querySelectorAll(selector).forEach(el => {
-                        if (el.textContent) {
+                        // Use pre-defined simple version if available
+                        if (el.hasAttribute('data-simple')) {
+                            el.textContent = el.getAttribute('data-simple');
+                        } else if (el.textContent) {
                             const original = el.textContent;
                             const simplified = simplifyText(original);
                             if (original !== simplified) {
