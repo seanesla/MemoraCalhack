@@ -141,6 +141,61 @@ export default function OnboardingPage() {
     }
   };
 
+  // Demo account handler - creates fully functional account with demo data
+  const handleDemoAccount = async (demoRole: 'patient' | 'caregiver') => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Prepare demo payload with realistic data
+      const payload: any = {
+        role: demoRole,
+        name: demoRole === 'patient' ? 'Demo Patient' : 'Demo Caregiver',
+      };
+
+      if (demoRole === 'patient') {
+        payload.age = 70;
+        payload.diagnosisStage = 'Early-stage dementia';
+        payload.locationLabel = 'Home, San Francisco';
+        payload.preferredName = 'Demo';
+      } else {
+        payload.email = 'demo@memora.care';
+      }
+
+      // Create real account via API
+      const response = await fetch('/api/onboard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 409) {
+          // Already onboarded, redirect anyway
+          router.push(demoRole === 'patient' ? '/patient' : '/caregiver');
+          return;
+        }
+
+        setError(data.error || 'Failed to create demo account. Please try again.');
+        return;
+      }
+
+      if (data.warning) {
+        console.warn('Demo account warning:', data.warning);
+      }
+
+      // Success - redirect to app
+      router.push(demoRole === 'patient' ? '/patient' : '/caregiver');
+    } catch (err) {
+      console.error('Demo account error:', err);
+      setError('Network error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Role selection screen (Step 1)
   if (!role) {
     return (
@@ -155,49 +210,111 @@ export default function OnboardingPage() {
             <p className="authSubtitle">Let's get started. Please select your role.</p>
 
             <div className="roleSelector">
-              <button
-                onClick={() => setRole('patient')}
-                className="roleCard"
-                style={{ all: 'unset', cursor: 'pointer', width: '100%' }}
-              >
-                <div className="roleIcon">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="48" height="48">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                </div>
-                <h3 className="roleTitle">Patient Interface</h3>
-                <p className="roleDescription">
-                  Simple voice companion with supportive interaction
-                </p>
-                <ul className="roleFeatures">
-                  <li>Privacy controls dashboard</li>
-                  <li>Voice-first interaction</li>
-                  <li>Orientation cues</li>
-                </ul>
-                <div className="roleButton">Select Patient</div>
-              </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%' }}>
+                <button
+                  onClick={() => setRole('patient')}
+                  className="roleCard"
+                  style={{ all: 'unset', cursor: 'pointer', width: '100%' }}
+                  disabled={loading}
+                >
+                  <div className="roleIcon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="48" height="48">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
+                  <h3 className="roleTitle">Patient Interface</h3>
+                  <p className="roleDescription">
+                    Simple voice companion with supportive interaction
+                  </p>
+                  <ul className="roleFeatures">
+                    <li>Privacy controls dashboard</li>
+                    <li>Voice-first interaction</li>
+                    <li>Orientation cues</li>
+                  </ul>
+                  <div className="roleButton">Select Patient</div>
+                </button>
+                <button
+                  onClick={() => handleDemoAccount('patient')}
+                  disabled={loading}
+                  style={{
+                    fontFamily: 'Inconsolata, monospace',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    padding: '0.875rem 1.5rem',
+                    background: 'transparent',
+                    color: '#d4a574',
+                    border: '1px solid rgba(212, 165, 116, 0.3)',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    width: '100%',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = '#d4a574';
+                    e.currentTarget.style.background = 'rgba(212, 165, 116, 0.05)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'rgba(212, 165, 116, 0.3)';
+                    e.currentTarget.style.background = 'transparent';
+                  }}
+                >
+                  {loading ? 'Creating demo account...' : '→ Try Demo as Patient'}
+                </button>
+              </div>
 
-              <button
-                onClick={() => setRole('caregiver')}
-                className="roleCard"
-                style={{ all: 'unset', cursor: 'pointer', width: '100%' }}
-              >
-                <div className="roleIcon">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="48" height="48">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
-                <h3 className="roleTitle">Caregiver Dashboard</h3>
-                <p className="roleDescription">
-                  Monitoring, insights, and memory management tools
-                </p>
-                <ul className="roleFeatures">
-                  <li>Analytics & insights</li>
-                  <li>Memory system management</li>
-                  <li>Alert configuration</li>
-                </ul>
-                <div className="roleButton">Select Caregiver</div>
-              </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%' }}>
+                <button
+                  onClick={() => setRole('caregiver')}
+                  className="roleCard"
+                  style={{ all: 'unset', cursor: 'pointer', width: '100%' }}
+                  disabled={loading}
+                >
+                  <div className="roleIcon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="48" height="48">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <h3 className="roleTitle">Caregiver Dashboard</h3>
+                  <p className="roleDescription">
+                    Monitoring, insights, and memory management tools
+                  </p>
+                  <ul className="roleFeatures">
+                    <li>Analytics & insights</li>
+                    <li>Memory system management</li>
+                    <li>Alert configuration</li>
+                  </ul>
+                  <div className="roleButton">Select Caregiver</div>
+                </button>
+                <button
+                  onClick={() => handleDemoAccount('caregiver')}
+                  disabled={loading}
+                  style={{
+                    fontFamily: 'Inconsolata, monospace',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    padding: '0.875rem 1.5rem',
+                    background: 'transparent',
+                    color: '#d4a574',
+                    border: '1px solid rgba(212, 165, 116, 0.3)',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    width: '100%',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = '#d4a574';
+                    e.currentTarget.style.background = 'rgba(212, 165, 116, 0.05)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'rgba(212, 165, 116, 0.3)';
+                    e.currentTarget.style.background = 'transparent';
+                  }}
+                >
+                  {loading ? 'Creating demo account...' : '→ Try Demo as Caregiver'}
+                </button>
+              </div>
             </div>
 
             <p className="roleExplainer">
