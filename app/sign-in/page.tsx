@@ -4,11 +4,6 @@ import Link from 'next/link';
 import '../auth.css';
 
 export default function SignInPage() {
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    window.location.href = '/dashboard.html';
-  };
-
   return (
     <div className="authPage">
       <div className="authContainer">
@@ -17,45 +12,43 @@ export default function SignInPage() {
         </Link>
 
         <div className="authCard">
-          <h1 className="authTitle">Sign In</h1>
-          <p className="authSubtitle">Welcome back to Memora</p>
+          <h1 className="authTitle">Choose Your Experience</h1>
+          <p className="authSubtitle">Memora serves two users with different needs</p>
 
-          <form className="authForm" onSubmit={handleSubmit}>
-            <div className="formField">
-              <label htmlFor="email">EMAIL</label>
-              <input
-                type="email"
-                id="email"
-                placeholder="your@email.com"
-                required
-              />
-            </div>
+          <div className="roleSelector">
+            <a href="/patient" className="roleCard">
+              <div className="roleIcon">🧑‍🦳</div>
+              <h3 className="roleTitle">Patient Interface</h3>
+              <p className="roleDescription">
+                Simple voice companion with supportive, dignified interaction
+              </p>
+              <ul className="roleFeatures">
+                <li>No surveillance data</li>
+                <li>Voice-first interaction</li>
+                <li>Orientation cues</li>
+              </ul>
+              <div className="roleButton">Enter as Patient</div>
+            </a>
 
-            <div className="formField">
-              <label htmlFor="password">PASSWORD</label>
-              <input
-                type="password"
-                id="password"
-                placeholder="••••••••"
-                required
-              />
-            </div>
+            <a href="/dashboard.html" className="roleCard">
+              <div className="roleIcon">👨‍⚕️</div>
+              <h3 className="roleTitle">Caregiver Dashboard</h3>
+              <p className="roleDescription">
+                Monitoring, insights, and memory management tools
+              </p>
+              <ul className="roleFeatures">
+                <li>Analytics & insights</li>
+                <li>Memory system management</li>
+                <li>Alert configuration</li>
+              </ul>
+              <div className="roleButton">Enter as Caregiver</div>
+            </a>
+          </div>
 
-            <button type="submit" className="authButton">
-              Sign In
-            </button>
-          </form>
-
-          <p className="authFooter">
-            Don't have an account?{' '}
-            <Link href="/sign-up" className="authLink">
-              Sign up
-            </Link>
+          <p className="roleExplainer">
+            Why two interfaces? Different users need different tools.
+            Patients get supportive companionship. Caregivers get care analytics.
           </p>
-
-          <a href="/dashboard.html" className="skipButton">
-            Skip for now →
-          </a>
         </div>
       </div>
     </div>
