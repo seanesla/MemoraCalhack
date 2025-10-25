@@ -1500,53 +1500,6 @@
             transform: translateY(-2px);
         }
 
-        /* Accessibility Toolbar Styles */
-        .accessibility-toolbar {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            gap: 12px;
-            z-index: 1000;
-            background: rgba(10, 10, 10, 0.95);
-            padding: 12px;
-            border-radius: 12px;
-            border: 2px solid #FFFFFF;
-            backdrop-filter: blur(10px);
-        }
-
-        .accessibility-btn {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 12px 16px;
-            background: #0A0A0A;
-            border: 2px solid #FFFFFF;
-            border-radius: 8px;
-            color: #FFFFFF;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .accessibility-btn:hover {
-            background: #1A1A1A;
-            transform: translateY(-2px);
-            box-shadow: 4px 4px 0 #FFFFFF;
-        }
-
-        .accessibility-btn.active {
-            background: #FFB74D;
-            border-color: #FFB74D;
-            color: #000000;
-        }
-
-        .accessibility-btn svg {
-            width: 20px;
-            height: 20px;
-        }
-
         /* Voice Chat Page Styles */
         .voice-interface-container {
             display: flex;
@@ -2024,22 +1977,6 @@
                 </div>
             </div>
         </nav>
-
-        <!-- Accessibility Toolbar -->
-        <div class="accessibility-toolbar">
-            <button class="accessibility-btn" id="simplify-toggle" title="Simplify technical terms">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                <span>Simple Language</span>
-            </button>
-            <button class="accessibility-btn" id="read-aloud-btn" title="Read page content aloud">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                </svg>
-                <span>Read Aloud</span>
-            </button>
-        </div>
 
         <!-- Main Content -->
         <main class="main-content">
@@ -3143,94 +3080,6 @@
 
             return simplified;
         }
-
-        let isSimplified = false;
-        const simplifyBtn = document.getElementById('simplify-toggle');
-
-        simplifyBtn.addEventListener('click', () => {
-            isSimplified = !isSimplified;
-            simplifyBtn.classList.toggle('active');
-
-            if (isSimplified) {
-                // Simplify all text
-                const selectors = ['.event-type', '.event-summary', '.card-label', '.card-value', '.card-subtitle', '.config-label', '.config-value', '.alert-config-name', '.insight-item-text', '.archival-title', '.core-memory-label', '.event-details-item', '.page-subtitle', '.insight-title', '.settings-title', '.settings-description', '.insights-content p'];
-
-                selectors.forEach(selector => {
-                    document.querySelectorAll(selector).forEach(el => {
-                        // Use pre-defined simple version if available
-                        if (el.hasAttribute('data-simple')) {
-                            el.textContent = el.getAttribute('data-simple');
-                        } else if (el.textContent) {
-                            const original = el.textContent;
-                            const simplified = simplifyText(original);
-                            if (original !== simplified) {
-                                if (!el.getAttribute('data-original')) {
-                                    el.setAttribute('data-original', original);
-                                }
-                                el.textContent = simplified;
-                            }
-                        }
-                    });
-                });
-            } else {
-                // Restore original text
-                document.querySelectorAll('[data-original]').forEach(el => {
-                    el.textContent = el.getAttribute('data-original');
-                });
-            }
-        });
-
-        // Accessibility Features: Read Aloud
-        const readAloudBtn = document.getElementById('read-aloud-btn');
-
-        readAloudBtn.addEventListener('click', () => {
-            if (!window.speechSynthesis) {
-                alert('Speech not supported in this browser');
-                return;
-            }
-
-            // Cancel any ongoing speech
-            window.speechSynthesis.cancel();
-
-            // Get current active page
-            const activePage = document.querySelector('.page.active');
-            if (!activePage) return;
-
-            // Build spoken description
-            const pageTitle = activePage.querySelector('.page-title')?.textContent || '';
-            const pageSubtitle = activePage.querySelector('.page-subtitle')?.textContent || '';
-
-            let spokenText = `${pageTitle}. ${pageSubtitle}. `;
-
-            // Add card content
-            const cards = activePage.querySelectorAll('.card, .insight-section, .settings-section, .timeline-event-card, .core-memory-card, .archival-memory-card');
-            cards.forEach((card, index) => {
-                const label = card.querySelector('.card-label, .insight-title, .settings-title, .event-summary, .core-memory-label, .archival-title')?.textContent;
-                const value = card.querySelector('.card-value, .insight-stat-value, .core-memory-value')?.textContent;
-                const subtitle = card.querySelector('.card-subtitle, .event-details, .settings-description')?.textContent;
-
-                if (label) spokenText += `${label}. `;
-                if (value) spokenText += `${value}. `;
-                if (subtitle && subtitle.length < 200) spokenText += `${subtitle}. `;
-            });
-
-            // Simplify before speaking
-            const simplifiedText = simplifyText(spokenText);
-
-            // Speak
-            const utterance = new SpeechSynthesisUtterance(simplifiedText);
-            utterance.rate = 0.85; // Slower for elderly
-            utterance.pitch = 1.0;
-            utterance.volume = 1.0;
-
-            // Visual feedback
-            readAloudBtn.classList.add('active');
-            utterance.onend = () => {
-                readAloudBtn.classList.remove('active');
-            };
-
-            window.speechSynthesis.speak(utterance);
-        });
 
         // ===== VOICE PAGE FUNCTIONALITY =====
 
