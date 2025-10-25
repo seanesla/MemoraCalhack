@@ -1,0 +1,324 @@
+// Memora Database Schema
+// Adapted for Clerk authentication with direct clerkId storage
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// AUTHENTICATION & USER MANAGEMENT (Clerk-based)
+// ============================================================================
+
+model Patient {
+  id                String    @id @default(cuid())
+  clerkId           String    @unique
+
+  name              String
+  age               Int
+  preferredName     String?
+  locationLabel     String?
+  diagnosisStage    String?
+  currentRoutineFocus String?
+  lastCheckIn       DateTime?
+
+  // Letta Integration
+  lettaAgentId      String?   @unique
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relationships
+  conversations     Conversation[]
+  timelineEvents    TimelineEvent[]
+  medications       Medication[]
+  dailyActivities   DailyActivity[]
+  sleepLogs         SleepLog[]
+  behavioralMetrics BehavioralMetrics[]
+  privacyConsents   PrivacyConsent[]
+  insights          PatientInsights?
+  alertConfig       AlertConfiguration?
+
+  @@map("patients")
+}
+
+model Caregiver {
+  id          String    @id @default(cuid())
+  clerkId     String    @unique
+
+  name        String
+  email       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("caregivers")
+}
+
+// ============================================================================
+// VOICE & CONVERSATIONS
+// ============================================================================
+
+model Conversation {
+  id          String    @id @default(cuid())
+  patientId   String
+  patient     Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  title       String?
+  startedAt   DateTime  @default(now())
+  endedAt     DateTime?
+  duration    Int?      // seconds
+
+  // Relationships
+  messages    Message[]
+
+  @@map("conversations")
+  @@index([patientId, startedAt(sort: Desc)])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  role           MessageRole
+  content        String       @db.Text
+  timestamp      DateTime     @default(now())
+  edited         Boolean      @default(false)
+  editedAt       DateTime?
+
+  @@map("messages")
+  @@index([conversationId, timestamp])
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+// ============================================================================
+// MEDICATIONS
+// ============================================================================
+
+model Medication {
+  id            String    @id @default(cuid())
+  patientId     String
+  patient       Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  name          String
+  dosage        String
+  timeOfDay     String
+  reminderTime  String?
+
+  active        Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relationships
+  doses         MedicationDose[]
+
+  @@map("medications")
+  @@index([patientId, active])
+}
+
+model MedicationDose {
+  id            String     @id @default(cuid())
+  medicationId  String
+  medication    Medication @relation(fields: [medicationId], references: [id], onDelete: Cascade)
+
+  scheduledFor  DateTime
+  takenAt       DateTime?
+  skipped       Boolean    @default(false)
+  notes         String?
+
+  createdAt     DateTime   @default(now())
+
+  @@map("medication_doses")
+  @@index([medicationId, scheduledFor(sort: Desc)])
+}
+
+// ============================================================================
+// DAILY METRICS
+// ============================================================================
+
+model DailyActivity {
+  id          String    @id @default(cuid())
+  patientId   String
+  patient     Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  date        DateTime  @db.Date
+  activityType String
+  description String?
+  completedAt DateTime  @default(now())
+  duration    Int?      // minutes
+
+  @@map("daily_activities")
+  @@index([patientId, date(sort: Desc)])
+}
+
+model SleepLog {
+  id          String    @id @default(cuid())
+  patientId   String
+  patient     Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  date        DateTime  @db.Date
+  bedtime     DateTime?
+  wakeTime    DateTime?
+  totalHours  Float?
+  quality     String?
+  notes       String?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("sleep_logs")
+  @@unique([patientId, date])
+  @@index([patientId, date(sort: Desc)])
+}
+
+// ============================================================================
+// BEHAVIORAL METRICS
+// ============================================================================
+
+model BehavioralMetrics {
+  id          String    @id @default(cuid())
+  patientId   String
+  patient     Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  date        DateTime  @db.Date
+
+  // Response Time
+  avgResponseTimeMs     Int?
+  responseTimeBaseline  Int?
+
+  // Memory Recall
+  unpromptedRecallCount Int     @default(0)
+  unpromptedRecallExamples String? @db.Text
+
+  // Temporal Orientation
+  dateChecksCount       Int     @default(0)
+  timeChecksCount       Int     @default(0)
+
+  // Question Repetition
+  repeatedQuestions     String? @db.Text
+  repetitionBaseline    Float?
+
+  // Overall Metrics
+  moodScore             Float?
+  engagementScore       Float?
+
+  calculatedAt DateTime  @default(now())
+
+  @@map("behavioral_metrics")
+  @@unique([patientId, date])
+  @@index([patientId, date(sort: Desc)])
+}
+
+// ============================================================================
+// PRIVACY CONSENT
+// ============================================================================
+
+model PrivacyConsent {
+  id          String    @id @default(cuid())
+  patientId   String
+  patient     Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  consentType PrivacyConsentType
+  enabled     Boolean
+  changedAt   DateTime  @default(now())
+  impact      String?
+
+  @@map("privacy_consents")
+  @@index([patientId, changedAt(sort: Desc)])
+}
+
+enum PrivacyConsentType {
+  LOCATION_TRACKING
+  CONVERSATION_RECORDING
+  MEDICATION_TRACKING
+  ACTIVITY_MONITORING
+}
+
+// ============================================================================
+// TIMELINE & EVENTS
+// ============================================================================
+
+model TimelineEvent {
+  id          String    @id @default(cuid())
+  patientId   String
+  patient     Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  timestamp   DateTime  @default(now())
+  type        EventType
+  severity    Severity
+  summary     String
+  details     Json?
+
+  @@map("timeline_events")
+  @@index([patientId, timestamp(sort: Desc)])
+}
+
+enum EventType {
+  CONVERSATION
+  SENSOR_ALERT
+  PATTERN_CHANGE
+  MEMORY_UPDATE
+  MEDICATION
+  ACTIVITY
+}
+
+enum Severity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+// ============================================================================
+// INSIGHTS & ANALYTICS
+// ============================================================================
+
+model PatientInsights {
+  id          String    @id @default(cuid())
+  patientId   String    @unique
+  patient     Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  mood        String?
+  streakDays  Int       @default(0)
+  concerns    String[]
+  positiveMoments String[]
+  memoryTopicsToReinforce String[]
+
+  lastUpdated DateTime  @default(now())
+
+  @@map("patient_insights")
+}
+
+// ============================================================================
+// ALERT CONFIGURATION
+// ============================================================================
+
+model AlertConfiguration {
+  id          String    @id @default(cuid())
+  patientId   String    @unique
+  patient     Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Wandering Detection
+  wanderingEnabled      Boolean @default(true)
+  wanderingSafeRadius   Int     @default(110)
+  wanderingQuietStart   String  @default("21:00")
+  wanderingQuietEnd     String  @default("06:00")
+  wanderingChannels     String[]
+
+  // Activity Patterns
+  activityEnabled       Boolean @default(true)
+  activityThresholdHours Int    @default(3)
+  activityChannels      String[]
+
+  updatedAt DateTime  @updatedAt
+
+  @@map("alert_configurations")
+}

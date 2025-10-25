@@ -50,3 +50,5 @@ test-results/
 .playwright-mcp/
 public/3d-tests/
 public/test-*.html
+
+/lib/generated/prisma
