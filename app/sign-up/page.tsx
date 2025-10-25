@@ -13,7 +13,7 @@ export default function SignUpPage() {
   return (
     <div className="authPage">
       <div className="authContainer">
-        <Link href="/memora-cinematic.html" className="backLink">
+        <Link href={"/memora-cinematic.html" as any} className="backLink">
           ← Back to Home
         </Link>
 

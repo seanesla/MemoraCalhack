@@ -47,7 +47,7 @@ export default function DashboardLayout({
           {navItems.map((item) => (
             <Link
               key={item.path}
-              href={item.path}
+              href={item.path as any}
               className={`nav-link ${isActive(item.path) ? 'active' : ''}`}
             >
               {item.label}
