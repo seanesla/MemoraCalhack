@@ -174,7 +174,7 @@ export default function OnboardingPage() {
       if (!response.ok) {
         if (response.status === 409) {
           // Already onboarded, redirect anyway
-          router.push(demoRole === 'patient' ? '/patient' : '/caregiver');
+          router.push(demoRole === 'patient' ? '/patient' : '/dashboard.html');
           return;
         }
 
@@ -187,7 +187,7 @@ export default function OnboardingPage() {
       }
 
       // Success - redirect to app
-      router.push(demoRole === 'patient' ? '/patient' : '/caregiver');
+      router.push(demoRole === 'patient' ? '/patient' : '/dashboard.html');
     } catch (err) {
       console.error('Demo account error:', err);
       setError('Network error. Please try again.');
