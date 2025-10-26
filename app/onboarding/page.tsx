@@ -3,12 +3,13 @@
 /**
  * Onboarding Page - Beautiful cinematic design matching landing page
  *
- * Step 1: Role selection with styled cards
- * Step 2: Role-specific form
+ * Step 1: Role selection with styled cards (no auth required)
+ * Step 2: Role-specific form (requires auth)
  */
 
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import '../auth.css';
 
@@ -25,6 +26,7 @@ interface FormData {
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const { user, isLoaded } = useUser();
   const [role, setRole] = useState<Role>(null);
   const [formData, setFormData] = useState<FormData>({
     name: '',
@@ -238,7 +240,7 @@ export default function OnboardingPage() {
             <div className="roleSelector">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%' }}>
                 <button
-                  onClick={() => setRole('patient')}
+                  onClick={() => window.location.href = '/sign-up?role=patient'}
                   className="roleCard"
                   style={{ all: 'unset', cursor: 'pointer', width: '100%' }}
                   disabled={loading}
@@ -257,7 +259,7 @@ export default function OnboardingPage() {
                     <li>Voice-first interaction</li>
                     <li>Orientation cues</li>
                   </ul>
-                  <div className="roleButton">Select Patient</div>
+                  <div className="roleButton">Create Account</div>
                 </button>
                 <button
                   onClick={() => handleDemoAccount('patient')}
@@ -291,7 +293,7 @@ export default function OnboardingPage() {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%' }}>
                 <button
-                  onClick={() => setRole('caregiver')}
+                  onClick={() => window.location.href = '/sign-up?role=caregiver'}
                   className="roleCard"
                   style={{ all: 'unset', cursor: 'pointer', width: '100%' }}
                   disabled={loading}
@@ -310,7 +312,7 @@ export default function OnboardingPage() {
                     <li>Memory system management</li>
                     <li>Alert configuration</li>
                   </ul>
-                  <div className="roleButton">Select Caregiver</div>
+                  <div className="roleButton">Create Account</div>
                 </button>
                 <button
                   onClick={() => handleDemoAccount('caregiver')}
@@ -341,6 +343,13 @@ export default function OnboardingPage() {
                   {loading ? 'Creating demo account...' : '→ Try Demo as Caregiver'}
                 </button>
               </div>
+            </div>
+
+            <div style={{ textAlign: 'center', marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid rgba(212, 165, 116, 0.2)' }}>
+              <p style={{ color: '#9a9a9a', marginBottom: '0.5rem' }}>Already have an account?</p>
+              <a href="/sign-in" style={{ color: '#d4a574', textDecoration: 'none', fontWeight: 600, transition: 'color 0.3s' }} onMouseEnter={(e) => e.currentTarget.style.color = '#e8b665'} onMouseLeave={(e) => e.currentTarget.style.color = '#d4a574'}>
+                Sign In
+              </a>
             </div>
 
             <p className="roleExplainer">

@@ -24,6 +24,7 @@ import { supabase } from '@/lib/supabase';
 // Public routes that don't require authentication
 const isPublicRoute = createRouteMatcher([
   '/',
+  '/onboarding',  // Onboarding is entry point - must be accessible before auth
   '/sign-in',
   '/sign-up',
   '/memora-cinematic.html',
@@ -39,9 +40,8 @@ const isPublicRoute = createRouteMatcher([
 const isProtectedRoute = createRouteMatcher([
   '/patient(.*)',
   '/caregiver(.*)',
-  '/onboarding(.*)',
   '/dashboard.html',  // Caregiver dashboard - requires authentication
-  '/api/onboard',
+  '/api/onboard',  // Onboarding submission endpoint (requires auth for database writes)
   '/api/conversation',
   '/api/patients(.*)',
   '/api/caregivers(.*)',
@@ -106,16 +106,23 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     return;
   }
 
-  // Handle /onboarding and /api/onboard routes
-  if (pathname.startsWith('/onboarding') || pathname === '/api/onboard') {
-    // If already onboarded, redirect to role-appropriate page
-    if (userRole === 'patient') {
+  // Handle /onboarding route
+  if (pathname.startsWith('/onboarding')) {
+    // If user is authenticated and already onboarded, redirect to role-appropriate page
+    if (userId && userRole === 'patient') {
       return NextResponse.redirect(new URL('/patient', request.url));
     }
-    if (userRole === 'caregiver') {
+    if (userId && userRole === 'caregiver') {
       return NextResponse.redirect(new URL('/dashboard.html', request.url));
     }
-    // Not onboarded - allow access to onboarding
+    // Allow access: either unauthenticated (Step 1: role selection)
+    // or authenticated but not onboarded (Step 2: complete form)
+    return;
+  }
+
+  // Handle /api/onboard route (requires authentication)
+  if (pathname === '/api/onboard') {
+    // Already checked authentication above - only allow if authenticated
     return;
   }
 
