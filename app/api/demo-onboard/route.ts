@@ -34,13 +34,8 @@ const demoOnboardSchema = z.object({
 });
 
 export async function POST(req: Request) {
-  // Only allow in development
-  if (process.env.NODE_ENV === 'production') {
-    return NextResponse.json(
-      { error: 'Demo accounts not available in production' },
-      { status: 403 }
-    );
-  }
+  // Demo accounts use hardcoded Clerk IDs, safe for production
+  // They don't conflict with real user accounts
 
   // Parse and validate
   let body: unknown;
