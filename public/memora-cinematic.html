@@ -869,7 +869,7 @@
           </div>
           <div class="footer-meta">
             <p>LiveKit · Deepgram · Groq · Claude · Letta · ChromaDB · Clerk</p>
-            <p>October 2025</p>
+            <p id="footer-date">Loading...</p>
           </div>
         </div>
       </footer>
@@ -1050,6 +1050,13 @@
       requestAnimationFrame(animate);
     }
     animate();
+    // Set current date in footer
+    const footerDateEl = document.getElementById('footer-date');
+    if (footerDateEl) {
+      const now = new Date();
+      const options = { month: 'long', year: 'numeric' };
+      footerDateEl.textContent = now.toLocaleDateString('en-US', options);
+    }
   </script>
 </body>
 </html>
