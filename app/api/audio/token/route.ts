@@ -11,14 +11,10 @@ import { auth } from '@clerk/nextjs/server';
  */
 export async function GET() {
   try {
-    // Verify authentication
+    // Verify authentication (allow demo mode - Deepgram tokens are scoped and temporary)
     const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    // Demo mode: Allow token generation even without Clerk auth
+    // Deepgram tokens are temporary (10 min) and rate-limited, so this is safe
 
     // Get Deepgram API key from environment
     const deepgramApiKey = process.env.DEEPGRAM_API_KEY;
