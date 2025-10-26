@@ -318,6 +318,13 @@ model PatientInsights {
   positiveMoments String[]
   memoryTopicsToReinforce String[]
 
+  // NEW: Groq Kimi K2 generated fields
+  frequentQuestions Json[]         // [{question: string, count: number}]
+  behavioralTrends String[]        // Deep analysis paragraphs from Groq
+  recommendations String[]         // Actionable caregiver guidance from Groq
+  analysisTimestamp DateTime?      // Last Groq analysis run timestamp
+  conversationsAnalyzed Int @default(0)  // Count of conversations in last analysis
+
   lastUpdated DateTime  @default(now())
 
   @@map("patient_insights")

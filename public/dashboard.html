@@ -2520,10 +2520,20 @@
             </div>
 
             <!-- Insights Page -->
-            <div id="insights-page" class="page">
+            <div id="insights-page" class="page" data-patient-id="cmh6xjz9q00008omek5epf02t">
                 <div class="page-header">
                     <h1 class="page-title">Insights</h1>
                     <p class="page-subtitle">AI observations and patterns</p>
+                </div>
+
+                <!-- Analyze Button -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                    <div id="analysis-meta" style="font-size: 14px; color: rgba(255,255,255,0.6);">
+                        <span id="analysis-status">Loading insights...</span>
+                    </div>
+                    <button id="analyze-btn" class="analyze-button" style="padding: 12px 24px; background: #A78BFA; color: #000; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; transition: all 0.2s;">
+                        Analyze Conversations
+                    </button>
                 </div>
 
                 <!-- Engagement Summary -->
@@ -2673,6 +2683,28 @@
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <!-- Behavioral Trends (Groq Kimi K2) -->
+                <div id="behavioral-trends-section" class="insight-section" style="display: none;">
+                    <div class="insight-header">
+                        <h2 class="insight-title">Behavioral Trends</h2>
+                        <span class="insight-badge neutral">AI Analysis</span>
+                    </div>
+                    <div id="behavioral-trends-content" style="color: rgba(255,255,255,0.9); line-height: 1.8;">
+                        <!-- Populated via JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Recommendations (Groq Kimi K2) -->
+                <div id="recommendations-section" class="insight-section" style="display: none;">
+                    <div class="insight-header">
+                        <h2 class="insight-title">Recommendations</h2>
+                        <span class="insight-badge positive">Action Items</span>
+                    </div>
+                    <ul id="recommendations-list" class="insight-list">
+                        <!-- Populated via JavaScript -->
+                    </ul>
                 </div>
             </div>
 
@@ -3847,8 +3879,120 @@
             }
         }
 
+        /**
+         * Load insights from /api/patients/[id]/insights (includes Groq fields)
+         */
+        async function loadInsights() {
+            try {
+                const response = await fetch(`/api/patients/${DEMO_PATIENT_ID}/insights`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const { insights } = await response.json();
+
+                if (!insights) {
+                    document.getElementById('analysis-status').textContent = 'No insights yet. Click "Analyze Conversations" to generate.';
+                    return;
+                }
+
+                // Update analysis status
+                const statusEl = document.getElementById('analysis-status');
+                if (insights.analysisTimestamp) {
+                    const analysisDate = new Date(insights.analysisTimestamp);
+                    const hoursAgo = Math.floor((Date.now() - analysisDate.getTime()) / (1000 * 60 * 60));
+                    statusEl.textContent = `Last analyzed: ${hoursAgo < 1 ? 'Less than 1 hour ago' : hoursAgo + ' hours ago'} • ${insights.conversationsAnalyzed || 0} conversations`;
+                } else {
+                    statusEl.textContent = 'Click "Analyze Conversations" for AI-powered insights';
+                }
+
+                // Show/hide Groq-generated sections
+                const trendsSection = document.getElementById('behavioral-trends-section');
+                const recsSection = document.getElementById('recommendations-section');
+
+                if (insights.behavioralTrends && insights.behavioralTrends.length > 0) {
+                    trendsSection.style.display = 'block';
+                    document.getElementById('behavioral-trends-content').innerHTML = insights.behavioralTrends.map(trend =>
+                        `<p style="margin-bottom: 16px;">${trend}</p>`
+                    ).join('');
+                } else {
+                    trendsSection.style.display = 'none';
+                }
+
+                if (insights.recommendations && insights.recommendations.length > 0) {
+                    recsSection.style.display = 'block';
+                    document.getElementById('recommendations-list').innerHTML = insights.recommendations.map(rec =>
+                        `<li class="insight-list-item"><div class="insight-item-text">${rec}</div></li>`
+                    ).join('');
+                } else {
+                    recsSection.style.display = 'none';
+                }
+
+                console.log('Insights loaded:', insights);
+            } catch (error) {
+                console.error('Error loading insights:', error);
+                document.getElementById('analysis-status').textContent = 'Error loading insights';
+            }
+        }
+
+        /**
+         * Trigger Groq Kimi K2 analysis on conversation history
+         */
+        async function analyzeConversations() {
+            const analyzeBtn = document.getElementById('analyze-btn');
+            const statusEl = document.getElementById('analysis-status');
+
+            // Disable button and show loading state
+            analyzeBtn.disabled = true;
+            analyzeBtn.textContent = 'Analyzing...';
+            statusEl.textContent = 'Running AI analysis on conversation history (this may take 30-60 seconds)...';
+
+            try {
+                const response = await fetch(`/api/patients/${DEMO_PATIENT_ID}/insights/analyze`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        lookbackDays: 30,
+                        forceRefresh: true
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || `HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // Show success message
+                statusEl.textContent = `Analysis complete! Analyzed ${data.conversationsAnalyzed || 0} conversations, ${data.messagesAnalyzed || 0} messages`;
+
+                // Reload insights to display new data
+                await loadInsights();
+
+            } catch (error) {
+                console.error('Analysis error:', error);
+                statusEl.textContent = `Analysis failed: ${error.message}`;
+            } finally {
+                // Re-enable button
+                analyzeBtn.disabled = false;
+                analyzeBtn.textContent = 'Analyze Conversations';
+            }
+        }
+
+        // Add event listener for analyze button
+        document.getElementById('analyze-btn').addEventListener('click', analyzeConversations);
+
+        // Load insights when insights page is shown
+        function loadInsightsPage() {
+            loadInsights();
+        }
+
+        // Hook into page navigation (when insights tab is clicked)
+        document.querySelector('[data-page="insights"]')?.addEventListener('click', loadInsightsPage);
+
         // Initialize dashboard data on page load
         loadDashboardData();
+        loadInsights(); // Load insights on initial page load
     </script>
 </body>
 </html>

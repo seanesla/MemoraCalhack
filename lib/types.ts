@@ -57,6 +57,13 @@ export interface Insights {
   concerns: string[];
   positiveMoments: string[];
   memoryTopicsToReinforce: string[];
+
+  // NEW: Groq Kimi K2 generated fields
+  behavioralTrends?: string[];       // Deep analysis paragraphs from Groq
+  recommendations?: string[];         // Actionable caregiver guidance from Groq
+  analysisTimestamp?: string;         // ISO timestamp of last Groq analysis
+  conversationsAnalyzed?: number;     // Count of conversations included in analysis
+
   lastUpdated: string;
 }
 

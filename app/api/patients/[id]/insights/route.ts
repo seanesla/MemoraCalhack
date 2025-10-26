@@ -48,6 +48,14 @@ export async function GET(
         concerns: insights.concerns || [],
         positiveMoments: insights.positiveMoments || [],
         memoryTopicsToReinforce: insights.memoryTopicsToReinforce || [],
+
+        // Groq Kimi K2 generated fields
+        frequentQuestions: (insights.frequentQuestions as any) || [],
+        behavioralTrends: insights.behavioralTrends || [],
+        recommendations: insights.recommendations || [],
+        analysisTimestamp: insights.analysisTimestamp?.toISOString(),
+        conversationsAnalyzed: insights.conversationsAnalyzed || 0,
+
         lastUpdated: insights.lastUpdated.toISOString(),
       },
     });
