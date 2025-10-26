@@ -1,385 +1,92 @@
 # Memora
 
-A voice-first AI companion application for dementia care, providing support and connection for those navigating cognitive challenges.
+A voice-first AI companion for dementia care with transparent patient consent controls.
 
-**Built for Cal Hacks 12.0 • October 2025**
+**Built for Cal Hacks 12.0 (Phase 11.3) • October 2025**
 
 ---
 
 ## Overview
 
-Memora is a **frontend-only PWA prototype** demonstrating a comprehensive dementia care companion system. The interface showcases:
-- Cinematic voice interaction with animated waveforms
-- Three-tier persistent memory architecture
-- Family-focused caregiver dashboard
-- Real-time activity monitoring (simulated)
+Memora is a **full-stack dementia care platform** with:
+- Real voice interaction via Deepgram STT/TTS
+- Claude Haiku 4.5 AI conversations
+- Letta 3-tier memory with ChromaDB archival storage
+- Supabase PostgreSQL backend (13 tables, 18 API endpoints)
+- Clerk authentication with role-based access
 
-**Current Status**: UI prototype with mock data. All voice interactions, AI features, and backend functionality are simulated.
+### Ethical Design
 
-### Ethical Design: Patient vs Caregiver Separation
+**Patient Interface** (`/patient`): Voice-first companion, NO cognitive scores shown. Patient controls what caregivers see via privacy toggles.
 
-Memora implements two distinct interfaces designed for different users:
-
-**Patient Interface** (`/patient`) - For John (person with dementia):
-- Voice-first companion with simple, supportive UI
-- Orientation cues: date, time, weather
-- "I'm here with you" reassuring language
-- **Privacy dashboard** - John controls what data caregivers see
-- **NO cognitive performance metrics shown** - no shame or anxiety
-
-**Caregiver Dashboard** (`/dashboard.html`) - For Ava (family caregiver):
-- Behavioral analytics and monitoring tools
-- Timeline of events, alerts, activities
-- 3-tier memory system with AI reasoning explanations
-- Voice Chat with edit functionality
-- Consent notifications when John changes privacy settings
-
-**Why this matters**: Showing a dementia patient caregiver surveillance metrics (location tracking, behavioral analytics) is harmful. The patient interface provides supportive companionship with privacy controls, while caregivers get monitoring tools with transparent data collection and patient consent.
-
----
-
-## Features
-
-### 🎙️ Patient Experience
-- **Voice-First Interface** - Cinematic UI with painterly waveform animations and typewriter transcript
-- **Three-Tier Memory System** - Visual representation of Core, Archival, and Alert memory layers
-- **PWA Support** - Install as native app on any device (iOS, Android, Desktop)
-- **Accessibility** - High contrast, large touch targets, voice-first interaction model
-
-### 📊 Caregiver Dashboard
-- **Overview** - Behavioral metrics (response time, memory recall, orientation, question patterns), medications tracking, consent notifications
-- **Voice Chat** - Purple-themed chat interface with persistent bottom bar, message timestamps, edit/checkpoint functionality
-- **Timeline** - Complete activity history (placeholder)
-- **Insights** - Conversation patterns and behavioral analysis (placeholder)
-- **Memory System** - Three-tier memory visualization with Core Memory, Archival Memory, and Alert Configuration
-- **Settings** - Alert and notification management (placeholder)
+**Caregiver Dashboard** (`/dashboard.html`): Monitoring analytics with consent notifications. All AI decisions show transparent explanations. Be honest about surveillance, don't euphemize it.
 
 ---
 
 ## Tech Stack
 
-### Frontend
-- **Next.js 16.0.0** - React framework with App Router
-- **React 19.2.0** - UI library
-- **TypeScript 5.6.2** - Type safety
-- **Tailwind CSS 3.4.10** - Utility-first styling
-- **Radix UI** - Accessible component primitives
-- **date-fns 3.6.0** - Date formatting
-
-### Backend (In Development)
-- **Supabase PostgreSQL** - Production database (local dev instance + cloud)
-- **Prisma ORM** - Database schema & migrations
-- **Clerk** - User authentication (email, OAuth)
-- **Letta** - Persistent 3-tier memory management (Core, Archival, Alert)
-- **Groq (Kimi K2)** - 280k context window for deep memory analysis
-- **Claude (Haiku 4.5)** - Ultra-fast inference for real-time conversations
-- **Context7** - Up-to-date API documentation
-- **LiveKit** - Real-time voice communication (planned)
-- **Deepgram** - Speech-to-text processing (planned)
-
-### Testing Infrastructure
-- **Vitest** - Unit & integration test framework
-- **Real API testing** - All tests use real Letta API, real Supabase database (no mocks)
-- **TDD approach** - Tests written before implementation
-
-**Current Status**:
-- ✅ Database schema: 13 tables (Prisma + Supabase)
-- ✅ Onboarding endpoint: Creates Patient/Caregiver + Letta agents (POST /api/onboard)
-- ✅ All 37 tests passing with real APIs and real database
-- 🔄 Middleware: In progress (onboarding redirect logic)
-- ⏳ Conversation API: Creates messages and sends to Letta agents
-- ⏳ Voice interface: LiveKit + Deepgram integration
-
-**Multi-Model Strategy**: Kimi K2 handles complex analysis with massive context (memory updates, pattern detection), while Claude Haiku provides instant conversational responses. Letta manages the 3-tier memory architecture with ChromaDB providing persistent vector storage for semantic search over long-term memories.
+**Frontend**: Next.js 16 • React 19 • TypeScript • Tailwind CSS • Radix UI
+**Backend**: Supabase PostgreSQL • Prisma ORM • Clerk Auth • 18 API endpoints
+**AI**: Claude Haiku 4.5 (responses) • Letta (memory) • ChromaDB (archival) • Deepgram (voice) • Groq Kimi K2 (planned)
+**Testing**: Vitest with 37+ tests (real APIs, no mocks)
 
 ---
 
 ## Getting Started
 
-### Prerequisites
-- Node.js 18+
-- npm or yarn
-- Supabase CLI (`brew install supabase/tap/supabase`)
-- Environment variables (see `.env.example`)
-
-### Installation & Local Development Setup
-
-1. Clone the repository
 ```bash
+# Prerequisites: Node.js 18+, Supabase CLI (brew install supabase/tap/supabase)
+
 git clone https://github.com/yourusername/memora.git
 cd memora
-```
-
-2. Install dependencies
-```bash
 npm install
+supabase start                  # Start local PostgreSQL
+cp .env.example .env            # Fill in API keys
+npx prisma db push              # Apply schema
+npm run dev                     # Start dev server
+# Open http://localhost:3000
+
+# Run tests (37+ tests, real APIs)
+npx vitest run
 ```
 
-3. Start local Supabase instance
-```bash
-supabase start
-# Returns PostgreSQL connection details
-# DB URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
-```
+**Key Routes**:
+- `/` - Landing page
+- `/patient` - Voice interface (React)
+- `/dashboard.html` - Caregiver dashboard (static HTML with client-side routing)
+- `/sign-in`, `/sign-up`, `/onboarding` - Auth flow
 
-4. Create `.env` file (copy `.env.example` and fill in values)
-```bash
-cp .env.example .env
-# Update with local Supabase credentials and API keys
-```
+## Architecture
 
-5. Apply database migrations
-```bash
-npx prisma db push
-```
+**Hybrid System**:
+- Static HTML: Landing + caregiver dashboard (`public/*.html` with client-side JS routing)
+- Next.js: Patient voice interface (`/patient`), auth pages, API routes
+- Dashboard uses `scale(0.8)` transform → all full-height elements must use `125vh`
 
-6. Run development server
-```bash
-npm run dev
-```
+**3-Tier Memory** (Letta + ChromaDB):
+- Core: Agent persona, patient profile, current context
+- Archival: Historical conversations with semantic search (ChromaDB embeddings)
+- Alerts: Wandering detection, activity patterns
 
-7. Open [http://localhost:3000](http://localhost:3000)
-
-### Running Tests
-
-All tests use real APIs and real database (no mocks):
-
-```bash
-# Run all 37 tests (database, API, Letta integration)
-npx vitest run tests/db/schema.test.ts tests/api/onboard.test.ts tests/integration/letta.test.ts
-
-# Run specific test file
-npx vitest run tests/api/onboard.test.ts
-
-# Watch mode for development
-npx vitest tests/api/onboard.test.ts
-```
-
-**Test Results**: 37/37 passing
-- 17 database schema tests (Prisma + Supabase)
-- 13 onboarding API tests (with Letta agent creation)
-- 7 Letta integration tests (real API calls)
-
-### Build for Production
-
-```bash
-npm run build
-npm start
-```
-
----
-
-## Project Structure
-
-```
-/
-├── app/                       # Next.js App Router
-│   ├── layout.tsx            # Root layout with PWA metadata
-│   ├── page.tsx              # Redirects to landing page
-│   ├── patient/              # Voice interface (React)
-│   ├── sign-in/              # Auth page → redirects to dashboard
-│   ├── sign-up/              # Registration → redirects to dashboard
-│   └── dashboard/            # Old Next.js dashboard (deprecated)
-│
-├── components/               # React components
-│   ├── VoiceInterface.tsx    # State machine, waveform, transcript
-│   ├── PainterlyWaveform.tsx # Canvas particle animation
-│   └── ConversationTranscript.tsx # Typewriter effect
-│
-├── data/
-│   └── mock-data.ts          # All demo data (patient, timeline, insights, memory)
-│
-├── hooks/
-│   └── useMockVoiceConnection.ts # Simulated audio levels
-│
-├── lib/
-│   └── types.ts              # TypeScript definitions
-│
-├── public/                   # Static files (main application)
-│   ├── dashboard.html        # ⭐ Main dashboard (static HTML, client-side routing)
-│   ├── memora-cinematic.html # ⭐ Landing page (static HTML)
-│   ├── manifest.json         # PWA configuration
-│   ├── service-worker.js     # PWA offline support
-│   └── *.png, *.svg          # Images and assets
-│
-└── tailwind.config.ts        # Custom color palette (lavender/sage)
-```
-
----
-
-## Routes
-
-### Main Application
-- **`/`** - Landing page (static HTML with cinematic design)
-- **`/dashboard.html`** - Caregiver dashboard (single-page app with JS navigation)
-- **`/patient`** - Voice interface demo (React component)
-- **`/sign-in`** - Sign in page (redirects to dashboard)
-- **`/sign-up`** - Registration page (redirects to dashboard)
-
-### Dashboard Pages (Internal Navigation)
-Access via sidebar in `/dashboard.html`:
-- **Overview** - Today's engagement, activities, medications, sleep, mood, insights, memory moments
-- **Timeline** - Activity history (placeholder)
-- **Insights** - Conversation patterns (placeholder)
-- **Memories** - Three-tier memory system visualization
-- **Settings** - Alert configuration (placeholder)
-
-**Note**: Dashboard uses client-side JavaScript navigation. All pages are in a single HTML file.
-
----
-
-## Development
-
-### Commands
-```bash
-npm run dev      # Start development server (localhost:3000)
-npm run build    # Build for production
-npm start        # Start production server
-npm run lint     # Run ESLint
-npm run prepare  # Generate Tailwind CSS
-```
-
-### Mock Data
-All demo data is in `data/mock-data.ts`. Contains:
-- Patient profile (John Smith, 72, early-stage Alzheimer's)
-- 4 sensors with status (accelerometer, geolocation, microphone, app activity)
-- 4 timeline events (medication reminder, wandering alert, memory update, etc.)
-- Conversation insights (frequent questions, mood, concerns)
-- 3-tier memory blocks (core, archival, alerts)
-
-### Voice Interface
-Located at `/patient`. Uses state machine:
-```
-idle → listening (1.5s) → thinking (1.5s) → speaking (3.5s) → idle
-```
-Hardcoded transcript: "What day is it today?"
-Hardcoded response: "Today is Wednesday, October 23rd..."
-
-Modify timings and text in `components/VoiceInterface.tsx`.
-
-### Three-Tier Memory System
-Visualized on **Memories** page in dashboard:
-
-**Tier 1 - Core Memory** (Gold borders):
-- Agent Persona (how AI should speak)
-- Patient Profile (personal information)
-- Current Context (auto-updated situational awareness)
-
-**Tier 2 - Archival Memory** (White borders):
-- Historical conversation memories
-- Timestamped entries with tags
-- Searchable archive of interactions
-
-**Tier 3 - Alert Configuration** (Green status):
-- Wandering Detection
-- Activity Pattern Monitoring
-
----
-
-## Design Philosophy
-
-### Cinematic Editorial Aesthetic
-- **Film grain overlay** - Subtle texture for warmth
-- **Vignette effects** - Focus attention on content
-- **Color palette** - Pure black (#000000), white (#FFFFFF), gold accent (#FFB74D)
-- **Typography** - Inter (UI), Inconsolata (logo/monospace), Space Grotesk/Literata (landing)
-- **Generous whitespace** - Large touch targets, clear hierarchy
-
-### Landing Page Navigation
-- **Compact header** - Reduced height (1rem padding) with 48px logo
-- **Section navigation** - Center navigation bar with clickable section links (Memory, Voice, Features, Why Different)
-- **Smooth scrolling** - Native `scrollIntoView` API for animated section jumps
-- **Responsive design** - Navigation adapts to screen sizes
-
-### Accessibility First
-- **High contrast text** - WCAG AAA compliant (verified contrast ratios: Orange #FF9800: 9.61:1, Gold #FFB74D: 12.32:1, Green #4CAF50: 7.80:1)
-- **Large touch targets** - Minimum 44px
-- **Simple navigation patterns** - Intuitive section-based navigation
-- **Voice-first interaction model** - Patient interface prioritizes voice over text
-- **No complex gestures required** - Single taps and simple interactions only
-
----
-
-## Architecture Notes
-
-### Hybrid Static HTML + Next.js
-The application uses two systems:
-
-**Static HTML** (`/public/`):
-- Landing page: `memora-cinematic.html` (1086 lines)
-- Dashboard: `dashboard.html` (850+ lines, single-page app with client-side routing)
-- Served directly by Next.js static file handler
-
-**Next.js App Router** (`/app/`):
-- Voice interface (`/patient`)
-- Auth pages (`/sign-in`, `/sign-up`)
-- Root redirect (`/`)
-
-### Dashboard Scale Transform
-Dashboard uses `transform: scale(0.8)` on body for visual sizing:
-```css
-body {
-  transform: scale(0.8);
-  transform-origin: top left;
-  width: 125%;   /* 100% / 0.8 */
-  height: 125%;  /* 100% / 0.8 */
-}
-```
-All full-height elements use `125vh` instead of `100vh` to compensate for scaling.
-
----
-
-## Future Integration
-
-This frontend is designed to integrate with:
-- **Groq API (Kimi K2)** for deep memory analysis with 280k context window
-- **Claude (Haiku 4.5)** for ultra-fast real-time patient conversations
-- **LiveKit** for real-time voice communication
-- **Deepgram** for speech-to-text
-- **Letta** for persistent 3-tier memory management (Core, Archival, Alert)
-- **ChromaDB** for vector storage of Letta's archival memory embeddings
-- **Clerk** for user authentication
-
-**Memory Architecture**: Letta manages the 3-tier memory system while ChromaDB provides persistent vector storage for semantic search over long-term conversation history.
+**Design**: WCAG AAA compliant (7:1+ contrast), 44px+ touch targets, voice-first interaction
 
 See `CLAUDE.md` for detailed architecture documentation.
 
 ---
 
-## Known Limitations
+## Current Limitations
 
-- ❌ No backend - all data is static mock data
-- ❌ No real authentication - sign-in always redirects to dashboard
-- ❌ No persistence - page refresh resets all data
-- ❌ No real voice - audio waveform is simulated with random values
-- ❌ Timeline, Insights, Settings pages are placeholders
-- ❌ No API calls or external services
-
----
-
-## Contributing
-
-This is a hackathon prototype. Contributions welcome for:
-- UI/UX improvements
-- Accessibility enhancements
-- PWA features (offline support, notifications)
-- Additional mock data scenarios
-- Documentation
+- **Groq**: Not yet integrated (env var exists but unused)
+- **LiveKit**: Token endpoint ready but voice UI doesn't use it yet
+- **Dashboard pages**: Only Overview and Voice Chat have real content; Timeline, Insights, Settings are placeholders
+- **Mock data**: `data/mock-data.ts` still used in `dashboard.html` (NOT in voice interface or APIs)
 
 ---
 
 ## License
 
-MIT License - see LICENSE file for details
+MIT License
 
 ---
-
-## Acknowledgments
 
 Built with care at **Cal Hacks 12.0**
-
-**Technologies**: Next.js • React • TypeScript • Tailwind CSS • Groq • Claude • LiveKit • Deepgram • Letta • ChromaDB • Clerk
-
----
-
-**Note**: This is a frontend prototype demonstrating UI/UX concepts. AI features, voice processing, and real-time functionality are simulated with mock data. Backend integration is planned for future development.
