@@ -668,11 +668,12 @@ export default function VoiceInterface({ patientId: propPatientId }: { patientId
       if (currentConversationId) {
         requestBody.conversationId = currentConversationId;
       }
-      if (patientId) {
-        requestBody.patientId = patientId;
+      // Use propPatientId directly to avoid closure/timing issues with state
+      if (propPatientId) {
+        requestBody.patientId = propPatientId;
       }
 
-      console.log('🤖 Sending to conversation API:', { message: finalText.substring(0, 50) + '...', conversationId: currentConversationId, patientId: patientId });
+      console.log('🤖 Sending to conversation API:', { message: finalText.substring(0, 50) + '...', conversationId: currentConversationId, patientId: propPatientId });
 
       const conversationRes = await fetch('/api/conversation', {
         method: 'POST',
