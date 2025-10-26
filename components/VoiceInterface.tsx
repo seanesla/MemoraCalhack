@@ -104,7 +104,15 @@ export default function VoiceInterface({ patientId: propPatientId }: { patientId
 
     const initializeConversations = async () => {
       try {
-        // Get list of all conversations for authenticated user
+        // In demo mode (no userId), skip loading conversation history from /api/conversations
+        // since that endpoint requires authentication. Demo mode starts fresh each session.
+        if (!userId && patientId) {
+          console.log('📱 Demo mode detected - skipping conversation history load');
+          setAllConversations([]);
+          return;
+        }
+
+        // For authenticated users, get list of all conversations
         // API will determine patient from auth context
         const conversationsRes = await fetch('/api/conversations', {
           headers: { 'Content-Type': 'application/json' },
@@ -141,7 +149,7 @@ export default function VoiceInterface({ patientId: propPatientId }: { patientId
     };
 
     initializeConversations();
-  }, [userId]);
+  }, [userId, patientId]);
 
   // Fetch Deepgram token on mount for real-time transcription
   useEffect(() => {
@@ -656,7 +664,7 @@ export default function VoiceInterface({ patientId: propPatientId }: { patientId
         requestBody.patientId = patientId;
       }
 
-      console.log('🤖 Sending to conversation API:', JSON.stringify(requestBody));
+      console.log('🤖 Sending to conversation API:', { message: finalText.substring(0, 50) + '...', conversationId: currentConversationId, patientId: patientId });
 
       const conversationRes = await fetch('/api/conversation', {
         method: 'POST',
