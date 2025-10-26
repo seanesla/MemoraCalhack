@@ -43,10 +43,13 @@ export async function POST(request: Request) {
     let targetPatientId: string;
     let caregiverId: string | null = null;
 
-    // Check if user is a patient
-    const patient = await prisma.patient.findUnique({
-      where: { clerkId: userId },
-    });
+    // Check if user is a patient (skip if no userId - demo mode)
+    let patient = null;
+    if (userId) {
+      patient = await prisma.patient.findUnique({
+        where: { clerkId: userId },
+      });
+    }
 
     if (patient) {
       // User is patient - conversation is for themselves
