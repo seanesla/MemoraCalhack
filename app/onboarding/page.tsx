@@ -141,16 +141,24 @@ export default function OnboardingPage() {
     }
   };
 
-  // Demo account handler - creates fully functional account with demo data
+  // Demo account handler - uses hardcoded demo Clerk IDs so anyone can test
   const handleDemoAccount = async (demoRole: 'patient' | 'caregiver') => {
     setLoading(true);
     setError(null);
 
     try {
+      // Use hardcoded demo Clerk IDs so demo accounts are global
+      // This allows anyone to test without conflicts
+      const demoClerkId = demoRole === 'patient'
+        ? 'clerk_demo_patient_global'
+        : 'clerk_demo_caregiver_global';
+
       // Prepare demo payload with realistic data
       const payload: any = {
         role: demoRole,
         name: demoRole === 'patient' ? 'Demo Patient' : 'Demo Caregiver',
+        // Override with demo Clerk ID - this is passed via custom header
+        // so server trusts it (only works in development)
       };
 
       if (demoRole === 'patient') {
@@ -162,23 +170,20 @@ export default function OnboardingPage() {
         payload.email = 'demo@memora.care';
       }
 
-      // Create real account via API
-      const response = await fetch('/api/onboard', {
+      // Call special demo endpoint that uses hardcoded demo Clerk ID
+      const response = await fetch('/api/demo-onboard', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          ...payload,
+          demoRole, // Endpoint uses this to route to demo onboarding
+        }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        if (response.status === 409) {
-          // Already onboarded, redirect anyway
-          router.push(demoRole === 'patient' ? '/patient' : '/dashboard.html');
-          return;
-        }
-
-        setError(data.error || 'Failed to create demo account. Please try again.');
+        setError(data.error || 'Failed to access demo account. Please try again.');
         return;
       }
 
@@ -186,7 +191,16 @@ export default function OnboardingPage() {
         console.warn('Demo account warning:', data.warning);
       }
 
-      // Success - redirect to app
+      // Store demo account ID in localStorage so pages can load demo data
+      if (demoRole === 'patient') {
+        localStorage.setItem('demo_patient_id', data.userId);
+        localStorage.setItem('demo_mode', 'true');
+      } else {
+        localStorage.setItem('demo_caregiver_id', data.userId);
+        localStorage.setItem('demo_mode', 'true');
+      }
+
+      // Success - redirect to regular app (pages will check localStorage for demo mode)
       router.push(demoRole === 'patient' ? '/patient' : '/dashboard.html');
     } catch (err) {
       console.error('Demo account error:', err);

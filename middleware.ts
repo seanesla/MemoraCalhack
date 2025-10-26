@@ -30,6 +30,7 @@ const isPublicRoute = createRouteMatcher([
   '/favicon.ico',
   '/manifest.json',
   '/service-worker.js',
+  '/api/demo-onboard',  // Demo account creation (uses hardcoded demo Clerk IDs)
   '/_next(.*)',
   '/public(.*)',
 ]);
@@ -62,6 +63,11 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     signInUrl.searchParams.set('redirect_url', pathname);
     return NextResponse.redirect(signInUrl);
   }
+
+  // Check if this is a demo user
+  const isDemoPatient = userId === 'clerk_demo_patient_global';
+  const isDemoCaregiver = userId === 'clerk_demo_caregiver_global';
+  const isDemo = isDemoPatient || isDemoCaregiver;
 
   // User is authenticated. Check onboarding status.
   // Query database to see if user has Patient or Caregiver record
@@ -108,8 +114,15 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     return;
   }
 
-  // Not onboarded - redirect to /onboarding
-  if (!userRole) {
+  // Not onboarded - allow access to /patient and /dashboard.html for demo mode
+  // (pages will check localStorage for demo mode and fetch appropriate data)
+  // Otherwise redirect to /onboarding
+  if (!userRole && !isDemo) {
+    // Allow these routes even without onboarding (demo mode via localStorage)
+    if (pathname.startsWith('/patient') || pathname === '/dashboard.html') {
+      return;
+    }
+
     const onboardingUrl = new URL('/onboarding', request.url);
     onboardingUrl.searchParams.set('from', pathname);
     return NextResponse.redirect(onboardingUrl);
@@ -117,19 +130,36 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
 
   // Onboarded - check role-based access
   if (pathname.startsWith('/patient') && userRole !== 'patient') {
-    // Non-patient trying to access /patient
+    // Non-patient trying to access /patient (unless they're the demo patient or in demo mode)
+    if (isDemoPatient) {
+      return;
+    }
+    // Allow if user just wants to view demo, will be handled by page
+    if (!userRole) {
+      return;
+    }
     const redirectUrl = userRole === 'caregiver' ? '/dashboard.html' : '/onboarding';
     return NextResponse.redirect(new URL(redirectUrl, request.url));
   }
 
   if (pathname.startsWith('/caregiver') && userRole !== 'caregiver') {
     // Non-caregiver trying to access /caregiver
+    if (isDemoCaregiver) {
+      return;
+    }
     const redirectUrl = userRole === 'patient' ? '/patient' : '/onboarding';
     return NextResponse.redirect(new URL(redirectUrl, request.url));
   }
 
   if (pathname === '/dashboard.html' && userRole !== 'caregiver') {
-    // Non-caregiver trying to access dashboard
+    // Non-caregiver trying to access dashboard (unless they're demo caregiver)
+    if (isDemoCaregiver) {
+      return;
+    }
+    // Allow if user is in demo mode, will be handled by page
+    if (!userRole) {
+      return;
+    }
     const redirectUrl = userRole === 'patient' ? '/patient' : '/onboarding';
     return NextResponse.redirect(new URL(redirectUrl, request.url));
   }
