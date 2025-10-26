@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "prepare": "tailwindcss -o ./app/globals.css --minify"
+    "prepare": "tailwindcss -o ./app/globals.css --minify",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.67.0",
