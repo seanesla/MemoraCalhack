@@ -53,7 +53,7 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
 
   // Allow public routes without authentication
   if (isPublicRoute(request)) {
-    return;
+    return NextResponse.next();
   }
 
   // Redirect unauthenticated users from protected routes to sign-in
@@ -103,7 +103,7 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
 
   // Allow patient API endpoints - authentication is checked in the endpoint itself
   if (pathname.startsWith('/api/patients') || pathname.startsWith('/api/caregivers') || pathname.startsWith('/api/conversation') || pathname.startsWith('/api/audio') || pathname.startsWith('/api/livekit')) {
-    return;
+    return NextResponse.next();
   }
 
   // Handle /onboarding route
@@ -117,13 +117,13 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     }
     // Allow access: either unauthenticated (Step 1: role selection)
     // or authenticated but not onboarded (Step 2: complete form)
-    return;
+    return NextResponse.next();
   }
 
   // Handle /api/onboard route (requires authentication)
   if (pathname === '/api/onboard') {
     // Already checked authentication above - only allow if authenticated
-    return;
+    return NextResponse.next();
   }
 
   // Not onboarded - allow access to /patient and /dashboard.html for demo mode
@@ -132,7 +132,7 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
   if (!userRole && !isDemo) {
     // Allow these routes even without onboarding (demo mode via localStorage)
     if (pathname.startsWith('/patient') || pathname === '/dashboard.html') {
-      return;
+      return NextResponse.next();
     }
 
     const onboardingUrl = new URL('/onboarding', request.url);
@@ -144,11 +144,11 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
   if (pathname.startsWith('/patient') && userRole !== 'patient') {
     // Non-patient trying to access /patient (unless they're the demo patient or in demo mode)
     if (isDemoPatient) {
-      return;
+      return NextResponse.next();
     }
     // Allow if user just wants to view demo, will be handled by page
     if (!userRole) {
-      return;
+      return NextResponse.next();
     }
     const redirectUrl = userRole === 'caregiver' ? '/dashboard.html' : '/onboarding';
     return NextResponse.redirect(new URL(redirectUrl, request.url));
@@ -157,7 +157,7 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
   if (pathname.startsWith('/caregiver') && userRole !== 'caregiver') {
     // Non-caregiver trying to access /caregiver
     if (isDemoCaregiver) {
-      return;
+      return NextResponse.next();
     }
     const redirectUrl = userRole === 'patient' ? '/patient' : '/onboarding';
     return NextResponse.redirect(new URL(redirectUrl, request.url));
@@ -166,17 +166,18 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
   if (pathname === '/dashboard.html' && userRole !== 'caregiver') {
     // Non-caregiver trying to access dashboard (unless they're demo caregiver)
     if (isDemoCaregiver) {
-      return;
+      return NextResponse.next();
     }
     // Allow if user is in demo mode, will be handled by page
     if (!userRole) {
-      return;
+      return NextResponse.next();
     }
     const redirectUrl = userRole === 'patient' ? '/patient' : '/onboarding';
     return NextResponse.redirect(new URL(redirectUrl, request.url));
   }
 
   // Allow access - user is authenticated, onboarded, and accessing correct role route
+  return NextResponse.next();
 });
 
 export const config = {
