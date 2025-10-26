@@ -229,7 +229,7 @@ export default function OnboardingPage() {
     return (
       <div className="authPage">
         <div className="authContainer">
-          <a href="/memora-cinematic.html" className="backLink">
+          <a href="/" className="backLink">
             ← Back to Home
           </a>
 
