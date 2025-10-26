@@ -102,7 +102,7 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
   }
 
   // Allow patient API endpoints - authentication is checked in the endpoint itself
-  if (pathname.startsWith('/api/patients') || pathname.startsWith('/api/caregivers')) {
+  if (pathname.startsWith('/api/patients') || pathname.startsWith('/api/caregivers') || pathname.startsWith('/api/conversations')) {
     return;
   }
 
