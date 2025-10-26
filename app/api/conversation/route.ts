@@ -79,7 +79,7 @@ export async function POST(request: Request) {
       }
 
       targetPatientId = patientId;
-      caregiverId = caregiver.id;
+      caregiverId = caregiver?.id ?? null;
     }
 
     // 4. Get or create conversation
