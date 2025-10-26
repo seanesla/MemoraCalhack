@@ -9,7 +9,7 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-const DEMO_PATIENT_ID = 'cmh6xjz9q00008omek5epf02t';
+const DEMO_PATIENT_ID = 'cmh71axt20000pviy3l3siddm';
 const DEMO_PATIENT_CLERK_ID = 'clerk_demo_patient_global';
 const DEMO_CAREGIVER_CLERK_ID = 'clerk_demo_caregiver_global';
 
