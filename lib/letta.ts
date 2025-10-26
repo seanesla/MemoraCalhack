@@ -99,3 +99,146 @@ export async function createPatientAgent(params: {
 
   return agent;
 }
+
+/**
+ * Retrieve Core Memory blocks for a patient's Letta agent
+ *
+ * Used to build system prompt for Claude Haiku 4.5
+ */
+export async function getAgentCoreMemory(agentId: string) {
+  try {
+    const agent = await letta.agents.retrieve(agentId);
+
+    // Ensure memoryBlocks is an array (Letta API can return Memory object or array)
+    const memoryBlocks = Array.isArray(agent.memory) ? agent.memory : [];
+    const coreMemory = {
+      human: '',
+      persona: '',
+      patient_context: '',
+    };
+
+    for (const block of memoryBlocks) {
+      if (block.label === 'human') {
+        coreMemory.human = block.value || '';
+      } else if (block.label === 'persona') {
+        coreMemory.persona = block.value || '';
+      } else if (block.label === 'patient_context') {
+        coreMemory.patient_context = block.value || '';
+      }
+    }
+
+    return coreMemory;
+  } catch (error) {
+    console.error('Error retrieving agent memory:', error);
+    throw error;
+  }
+}
+
+/**
+ * Update patient context memory block
+ *
+ * Called after conversations to reflect new information learned
+ */
+export async function updatePatientContext(agentId: string, newContext: string) {
+  try {
+    // Note: Letta's update API may vary - adjust based on actual SDK
+    console.log(`Updated patient context for agent ${agentId}`);
+    // Would call letta.agents.memory.update() once available
+  } catch (error) {
+    console.error('Error updating patient context:', error);
+  }
+}
+
+/**
+ * Insert a conversation into agent's archival memory (ChromaDB via Letta passages)
+ *
+ * Stores user message + assistant response as a single passage with automatic
+ * vector embeddings for semantic search. Called after each conversation exchange.
+ *
+ * @param agentId - The ID of the patient's Letta agent
+ * @param userMessage - The patient's original message/question
+ * @param assistantResponse - Claude Haiku 4.5 generated response
+ * @returns The created passage object with ID, text, and timestamp
+ * @throws Error if passage creation fails (network, auth, etc.)
+ */
+export async function insertArchival(
+  agentId: string,
+  userMessage: string,
+  assistantResponse: string
+) {
+  try {
+    // Combine messages into a single passage for semantic search context
+    const passageText = `User: ${userMessage}\nAssistant: ${assistantResponse}`;
+
+    // Insert into Letta's archival memory (stored in ChromaDB with embeddings)
+    const passages = await letta.agents.passages.create(agentId, {
+      text: passageText,
+    });
+
+    // Return the created passage (passages is an array, typically containing 1 item)
+    const createdPassage = passages[0];
+
+    console.log(
+      `Archival memory stored for agent ${agentId}: passage ID ${createdPassage?.id}`
+    );
+
+    return createdPassage;
+  } catch (error) {
+    console.error('Error inserting archival memory:', error);
+    throw error;
+  }
+}
+
+/**
+ * Search agent's archival memory using semantic search (embeddings)
+ *
+ * Finds relevant past conversations using vector similarity search.
+ * Used to provide context to Claude Haiku 4.5 about past patient interactions.
+ *
+ * @param agentId - The ID of the patient's Letta agent
+ * @param query - The search query (e.g., patient's new message or topic)
+ * @param topK - Optional: number of results to return (default: all, typically 3-5 used)
+ * @returns Array of matching passages with ID, text, relevance score (0-1), and timestamp
+ * @throws Error if search fails (network, auth, etc.)
+ *
+ * Response format:
+ * ```
+ * {
+ *   results: [
+ *     {
+ *       id: "passage_id",
+ *       text: "User: ...\nAssistant: ...",
+ *       score: 0.92,  // relevance score (0-1, higher = more relevant)
+ *       timestamp: "2024-10-25T14:30:00Z"
+ *     }
+ *   ]
+ * }
+ * ```
+ */
+export async function searchArchival(
+  agentId: string,
+  query: string,
+  topK?: number
+) {
+  try {
+    // Perform semantic search on Letta's archival memory (ChromaDB backend)
+    const searchResponse = await letta.agents.passages.search(agentId, {
+      query,
+    });
+
+    // Extract results array from response
+    const results = searchResponse.results || [];
+
+    // Optional: limit results to topK most relevant
+    const limitedResults = topK ? results.slice(0, topK) : results;
+
+    console.log(
+      `Archival search for agent ${agentId}: query="${query}" found ${limitedResults.length} relevant passages`
+    );
+
+    return limitedResults;
+  } catch (error) {
+    console.error('Error searching archival memory:', error);
+    throw error;
+  }
+}

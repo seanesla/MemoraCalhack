@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     const validation = conversationRequestSchema.safeParse(body);
 
     if (!validation.success) {
-      const errorMessage = validation.error.errors?.[0]?.message || 'Invalid request body';
+      const errorMessage = validation.error.issues?.[0]?.message || 'Invalid request body';
       return NextResponse.json(
         { error: errorMessage },
         { status: 400 }
@@ -138,54 +138,63 @@ export async function POST(request: Request) {
       },
     });
 
-    // 7. Send message to Letta agent
-    let lettaResponse;
+    // 7. Get Letta Core Memory for Claude's system prompt
+    let coreMemory;
     try {
-      lettaResponse = await letta.agents.messages.create(
-        targetPatient.lettaAgentId,
-        {
-          messages: [
-            {
-              role: 'user',
-              content: [
-                {
-                  type: 'text',
-                  text: message,
-                },
-              ],
-            },
-          ],
-        }
-      );
+      const { getAgentCoreMemory } = await import('@/lib/letta');
+      coreMemory = await getAgentCoreMemory(targetPatient.lettaAgentId);
     } catch (lettaError) {
-      console.error('Letta API error:', lettaError);
+      console.error('Letta: Failed to retrieve core memory:', lettaError);
       return NextResponse.json(
-        { error: 'Failed to communicate with AI agent' },
+        { error: 'Failed to access patient memory' },
         { status: 500 }
       );
     }
 
-    // 8. Extract assistant response from Letta
-    // Letta returns a LettaResponse with messages array
-    const allMessages = lettaResponse.messages || [];
-    const assistantMessages = allMessages.filter(
-      (msg: any) => msg.messageType === 'assistant_message'
-    );
+    // 8. Search archival memory for relevant past conversations
+    let relevantHistory: Array<{ role: string; content: string }> = [];
+    try {
+      const { searchArchival } = await import('@/lib/letta');
+      const searchResults = await searchArchival(
+        targetPatient.lettaAgentId,
+        message,
+        3  // Retrieve top 3 most relevant passages
+      );
 
-    if (assistantMessages.length === 0) {
-      console.error('No assistant message in Letta response:', lettaResponse);
+      // Convert Letta passages to conversation format for system prompt
+      relevantHistory = searchResults.map(passage => ({
+        role: 'memory',
+        content: passage.text  // Contains "User: ... Assistant: ..." format
+      }));
+
+      console.log(
+        `Retrieved ${relevantHistory.length} relevant passages from archival memory for context`
+      );
+    } catch (archivalError) {
+      // Log but don't fail - archival search is optimization, not critical
+      console.warn('Warning: Failed to retrieve archival context:', archivalError);
+      // Continue with empty relevantHistory
+    }
+
+    // 9. Generate response using Claude Haiku 4.5 with enriched context
+    let responseText: string;
+    try {
+      const { generateResponse, buildSystemPrompt } = await import('@/lib/claude');
+
+      // Build system prompt with Core Memory + relevant past conversations
+      const systemPrompt = buildSystemPrompt(coreMemory, relevantHistory);
+      responseText = await generateResponse(systemPrompt, message);
+    } catch (claudeError) {
+      console.error('Claude API error:', claudeError);
       return NextResponse.json(
-        { error: 'AI agent did not provide a response' },
+        { error: 'Failed to generate response' },
         { status: 500 }
       );
     }
 
-    // Get the last assistant message (most recent response)
-    const lastAssistantMessage = assistantMessages[assistantMessages.length - 1];
-
-    // Letta returns content as a string, not an array
-    const responseText = lastAssistantMessage.content || '';
-    const lettaMessageId = lastAssistantMessage.id;
+    // Note: Letta message ID will be updated when we integrate
+    // Letta archival memory storage in Phase 11.2
+    const lettaMessageId = undefined;
 
     // 9. Store assistant response in database
     await prisma.message.create({
@@ -198,13 +207,28 @@ export async function POST(request: Request) {
       },
     });
 
-    // 10. Update conversation lastMessageAt
+    // 10. Store conversation in Letta's archival memory (ChromaDB via passages)
+    // This enables semantic search over past conversations for future responses
+    try {
+      const { insertArchival } = await import('@/lib/letta');
+      await insertArchival(
+        targetPatient.lettaAgentId,
+        message,
+        responseText
+      );
+    } catch (archivalError) {
+      // Log archival errors but don't block response - patient gets their response
+      console.warn('Warning: Failed to store in archival memory:', archivalError);
+      // Continue - archival is optimization for future responses, not critical to current response
+    }
+
+    // 11. Update conversation lastMessageAt
     await prisma.conversation.update({
       where: { id: conversation.id },
       data: { lastMessageAt: new Date() },
     });
 
-    // 11. Return response
+    // 12. Return response
     return NextResponse.json({
       conversationId: conversation.id,
       response: responseText,
