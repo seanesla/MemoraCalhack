@@ -56,10 +56,10 @@ export default function VoiceInterface() {
 
   // Voice-guided onboarding - speak welcome message on first load
   useEffect(() => {
-    if (!hasSpokenWelcome && synthRef.current) {
+    if (!hasSpokenWelcome) {
       // Wait a moment for page to settle, then speak welcome
-      const welcomeTimeout = setTimeout(() => {
-        speak("Hello, I'm Memora. I'm here with you. Press the circle to talk to me.");
+      const welcomeTimeout = setTimeout(async () => {
+        await speak("Hello, I'm Memora. I'm here with you. Press the circle to talk to me.");
         setHasSpokenWelcome(true);
       }, 1000);
 
@@ -67,12 +67,51 @@ export default function VoiceInterface() {
     }
   }, [hasSpokenWelcome]);
 
-  // Speak function - DISABLED (Web Speech API produces robotic voice)
-  // Will be replaced with proper voice in Phase 11 (LiveKit + Deepgram)
-  const speak = (text: string, options = {}) => {
-    // No-op: disabled until proper voice implementation
-    // Voice output will use Deepgram TTS in Phase 11
-    return;
+  // Speak function - Real TTS via Deepgram API (Phase 11.2)
+  const speak = async (text: string, options = {}) => {
+    if (!text || !text.trim()) {
+      console.warn('speak() called with empty text');
+      return;
+    }
+
+    try {
+      console.log('Calling Deepgram TTS for:', text.substring(0, 50) + '...');
+
+      // Call Deepgram TTS endpoint
+      const response = await fetch('/api/audio/speak', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+      });
+
+      if (!response.ok) {
+        console.error('TTS failed:', response.status);
+        return;
+      }
+
+      // Get audio as blob
+      const audioBlob = await response.blob();
+
+      // Create audio element and play
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+
+      audio.addEventListener('ended', () => {
+        // Clean up URL when playback finishes
+        URL.revokeObjectURL(audioUrl);
+        console.log('TTS playback finished');
+      });
+
+      audio.addEventListener('error', (err) => {
+        console.error('Audio playback error:', err);
+        URL.revokeObjectURL(audioUrl);
+      });
+
+      console.log('Playing TTS audio');
+      await audio.play();
+    } catch (error) {
+      console.error('Error in speak():', error);
+    }
   };
 
   // Play audio feedback for interactions
