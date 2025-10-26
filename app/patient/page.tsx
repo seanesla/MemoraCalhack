@@ -96,7 +96,7 @@ export default function PatientPage() {
   return (
     <main className="patient-page">
       <LiveKitRoomProvider patientId={patientId}>
-        <VoiceInterface />
+        <VoiceInterface patientId={patientId} />
       </LiveKitRoomProvider>
 
       <style jsx global>{`

@@ -33,7 +33,7 @@ interface MemoraCoreMemory {
   context: string;
 }
 
-export default function VoiceInterface() {
+export default function VoiceInterface({ patientId: propPatientId }: { patientId?: string | null }) {
   // Authentication
   const { userId } = useAuth();
 
@@ -73,7 +73,7 @@ export default function VoiceInterface() {
   const analyserRef = useRef<AnalyserNode | null>(null);
 
   // Supabase conversation state (replacing localStorage)
-  const [patientId, setPatientId] = useState<string | null>(null);
+  const [patientId, setPatientId] = useState<string | null>(propPatientId || null);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [conversationHistory, setConversationHistory] = useState<Message[]>([]);
   const [allConversations, setAllConversations] = useState<Conversation[]>([]);
@@ -100,7 +100,7 @@ export default function VoiceInterface() {
 
   // Initialize: Load patient ID, conversations list, and most recent conversation
   useEffect(() => {
-    if (!userId) return;
+    if (!userId && !patientId) return;
 
     const initializeConversations = async () => {
       try {
@@ -651,6 +651,9 @@ export default function VoiceInterface() {
       const requestBody: any = { message: finalText };
       if (currentConversationId) {
         requestBody.conversationId = currentConversationId;
+      }
+      if (patientId) {
+        requestBody.patientId = patientId;
       }
 
       console.log('🤖 Sending to conversation API:', requestBody);
