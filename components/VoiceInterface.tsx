@@ -29,12 +29,8 @@ export default function VoiceInterface() {
     activityMonitoring: true
   });
 
-  // Initialize speech synthesis
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-      synthRef.current = window.speechSynthesis;
-    }
-  }, []);
+  // Speech synthesis DISABLED - see speak() function
+  // Will be replaced with proper voice in Phase 11 (LiveKit + Deepgram)
 
   // Initialize shared state and load Core Memory
   useEffect(() => {
@@ -66,19 +62,12 @@ export default function VoiceInterface() {
     }
   }, [hasSpokenWelcome]);
 
-  // Speak function with accessibility features
+  // Speak function - DISABLED (Web Speech API produces robotic voice)
+  // Will be replaced with proper voice in Phase 11 (LiveKit + Deepgram)
   const speak = (text: string, options = {}) => {
-    if (!synthRef.current) return;
-
-    // Cancel any ongoing speech
-    synthRef.current.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.9; // Slightly slower for elderly users
-    utterance.pitch = 1.0;
-    utterance.volume = 1.0;
-
-    synthRef.current.speak(utterance);
+    // No-op: disabled until proper voice implementation
+    // Voice output will use Deepgram TTS in Phase 11
+    return;
   };
 
   // Play audio feedback for interactions
