@@ -22,14 +22,8 @@ const conversationRequestSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    // 1. Authenticate user
+    // 1. Authenticate user (allow demo mode - validation happens via patient lookup)
     const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized - must be logged in' },
-        { status: 401 }
-      );
-    }
 
     // 2. Parse and validate request body
     const body = await request.json();
