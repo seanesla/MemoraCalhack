@@ -29,7 +29,7 @@ export interface PatientAccessResult {
  * @returns PatientAccessResult with authorization status
  */
 export async function verifyPatientAccess(
-  userId: string,
+  userId: string | null,
   patientId: string
 ): Promise<PatientAccessResult> {
   // Fetch patient
@@ -46,13 +46,23 @@ export async function verifyPatientAccess(
     };
   }
 
-  // Allow demo patient access
+  // Allow demo patient access (even without Clerk userId)
   const isDemoPatient = patient.clerkId === 'clerk_demo_patient_global';
   if (isDemoPatient) {
     return {
       authorized: true,
       patient,
       caregiver: null,
+    };
+  }
+
+  // Require userId for non-demo patients
+  if (!userId) {
+    return {
+      authorized: false,
+      patient,
+      caregiver: null,
+      reason: 'Authentication required',
     };
   }
 

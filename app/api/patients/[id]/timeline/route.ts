@@ -15,16 +15,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Verify authentication
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
     const patientId = (await params).id;
+
+    const { userId } = await auth();
 
     // Verify patient access
     const access = await verifyPatientAccess(userId, patientId);
