@@ -2163,7 +2163,7 @@
             <div id="overview-page" class="page active">
                 <div class="page-header">
                     <h1 class="page-title">Today's Overview</h1>
-                    <p class="page-subtitle">Friday, October 24, 2025</p>
+                    <p class="page-subtitle" id="current-date">Loading...</p>
                 </div>
 
                 <!-- Consent Notifications -->
@@ -3989,6 +3989,14 @@
 
         // Hook into page navigation (when insights tab is clicked)
         document.querySelector('[data-page="insights"]')?.addEventListener('click', loadInsightsPage);
+
+        // Set current date
+        const dateEl = document.getElementById('current-date');
+        if (dateEl) {
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            dateEl.textContent = now.toLocaleDateString('en-US', options);
+        }
 
         // Initialize dashboard data on page load
         loadDashboardData();
