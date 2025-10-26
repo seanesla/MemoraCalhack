@@ -656,7 +656,7 @@ export default function VoiceInterface({ patientId: propPatientId }: { patientId
         requestBody.patientId = patientId;
       }
 
-      console.log('🤖 Sending to conversation API:', requestBody);
+      console.log('🤖 Sending to conversation API:', JSON.stringify(requestBody));
 
       const conversationRes = await fetch('/api/conversation', {
         method: 'POST',

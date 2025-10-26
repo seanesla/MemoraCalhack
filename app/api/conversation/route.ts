@@ -39,6 +39,14 @@ export async function POST(request: Request) {
 
     const { message, conversationId, patientId } = validation.data;
 
+    // Debug logging for demo mode
+    console.log('📞 Conversation API received:', {
+      userId,
+      patientId,
+      message: message.substring(0, 50),
+      hasConversationId: !!conversationId
+    });
+
     // 3. Determine if user is patient or caregiver
     let targetPatientId: string;
     let caregiverId: string | null = null;
