@@ -11,19 +11,37 @@ import { auth } from '@clerk/nextjs/server';
  */
 export async function GET(request: Request) {
   try {
-    // Verify authentication
+    // Get query parameters first
+    const { searchParams } = new URL(request.url);
+    const roomName = searchParams.get('roomName');
+
+    // Verify authentication (allow demo mode)
     const { userId } = await auth();
-    if (!userId) {
+
+    // For demo mode: If no Clerk userId but roomName contains a patient ID, allow it
+    let effectiveUserId = userId;
+    if (!userId && roomName) {
+      // Extract patient ID from room name (format: "patient-{patientId}")
+      const match = roomName.match(/^patient-(.+)$/);
+      if (match) {
+        effectiveUserId = match[1]; // Use patient ID as user identity
+        console.log('Demo mode: Using patient ID from room name:', effectiveUserId);
+      } else {
+        return NextResponse.json(
+          { error: 'Unauthorized' },
+          { status: 401 }
+        );
+      }
+    }
+
+    if (!effectiveUserId) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    // Get query parameters
-    const { searchParams } = new URL(request.url);
-    const roomName = searchParams.get('roomName');
-    const userName = searchParams.get('userName') || userId;
+    const userName = searchParams.get('userName') || effectiveUserId;
 
     // Validate required parameters
     if (!roomName) {
@@ -47,7 +65,7 @@ export async function GET(request: Request) {
 
     // Generate access token
     const token = new AccessToken(apiKey, apiSecret, {
-      identity: userId,
+      identity: effectiveUserId,
       name: userName,
       ttl: 24 * 60 * 60, // 24 hours
     });
