@@ -55,12 +55,15 @@ export async function POST(request: Request) {
       // User is patient - conversation is for themselves
       targetPatientId = patient.id;
     } else {
-      // Check if user is a caregiver
-      const caregiver = await prisma.caregiver.findUnique({
-        where: { clerkId: userId },
-      });
+      // Check if user is a caregiver (skip if no userId)
+      let caregiver = null;
+      if (userId) {
+        caregiver = await prisma.caregiver.findUnique({
+          where: { clerkId: userId },
+        });
+      }
 
-      if (!caregiver) {
+      if (!caregiver && !patientId) {
         return NextResponse.json(
           { error: 'User not found - must complete onboarding' },
           { status: 404 }
