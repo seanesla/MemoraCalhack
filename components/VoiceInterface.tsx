@@ -80,6 +80,14 @@ export default function VoiceInterface({ patientId: propPatientId }: { patientId
   const [showSessionList, setShowSessionList] = useState(false);
   const [lastMessageTimestamp, setLastMessageTimestamp] = useState<string | null>(null);
 
+  // Sync patientId state with prop changes (handles demo mode prop arriving after mount)
+  useEffect(() => {
+    if (propPatientId) {
+      setPatientId(propPatientId);
+      console.log('📝 PatientId prop updated:', propPatientId);
+    }
+  }, [propPatientId]);
+
   // Chat interface state
   const [textInput, setTextInput] = useState<string>('');
   const [silenceCounter, setSilenceCounter] = useState(0);
