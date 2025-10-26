@@ -21,6 +21,11 @@ export default function VoiceInterface() {
   const [showPrivacy, setShowPrivacy] = useState(false);
   const synthRef = useRef<SpeechSynthesis | null>(null);
 
+  // Audio capture refs for Phase 11.1 STT integration
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioStreamRef = useRef<MediaStream | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+
   // Privacy settings state
   const [privacySettings, setPrivacySettings] = useState({
     conversations: true,
@@ -104,55 +109,137 @@ export default function VoiceInterface() {
     return () => clearInterval(timer);
   }, []);
 
-  const handlePress = () => {
+  const handlePress = async () => {
     if (state === 'idle') {
-      // Play audio feedback
-      playFeedbackSound(440, 0.1); // A4 note, short beep
+      // ===== START RECORDING (First Click) =====
+      try {
+        playFeedbackSound(440, 0.1); // A4 note, short beep
+        speak("I'm listening. Take your time.");
+        setState('listening');
 
-      // Voice announcement
-      speak("I'm listening. Take your time.");
-
-      setState('listening');
-
-      // Mock: simulate transcript appearing
-      setTimeout(() => {
-        setTranscript('What day is it today?');
-      }, 1500);
-
-      // Mock: transition to thinking
-      setTimeout(() => {
-        playFeedbackSound(523, 0.15); // C5 note
-        speak("Let me think about that.");
-        setState('thinking');
-      }, 3000);
-
-      // Mock: transition to speaking with response
-      setTimeout(() => {
-        setState('speaking');
-        const responseText = 'Today is Wednesday, October 23rd. It\'s a beautiful autumn day.';
-        setResponse(responseText);
-        speak(responseText);
-      }, 4500);
-
-      // Mock: return to idle and save conversation
-      setTimeout(() => {
-        playFeedbackSound(349, 0.2); // F4 note, completion sound
-
-        // Save conversation to shared state
-        const userMessage = 'What day is it today?';
-        const assistantMessage = 'Today is Wednesday, October 23rd. It\'s a beautiful autumn day.';
-        addConversation({
-          timestamp: new Date().toISOString(),
-          userMessage,
-          assistantMessage,
-          context: coreMemory?.context
+        // Request microphone access
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
         });
-        console.log('Conversation saved to shared state');
 
-        setState('idle');
-        setTranscript('');
-        setResponse('');
-      }, 8000);
+        audioStreamRef.current = stream;
+        audioChunksRef.current = [];
+
+        // Create MediaRecorder
+        const mediaRecorder = new MediaRecorder(stream, {
+          mimeType: 'audio/webm',
+        });
+
+        mediaRecorderRef.current = mediaRecorder;
+
+        // Collect audio chunks
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            audioChunksRef.current.push(event.data);
+          }
+        };
+
+        // Handle recording stop
+        mediaRecorder.onstop = async () => {
+          try {
+            // ===== TRANSCRIBE AUDIO =====
+            const audioBlob = new Blob(audioChunksRef.current, {
+              type: 'audio/webm',
+            });
+
+            const formData = new FormData();
+            formData.append('audio', audioBlob);
+
+            console.log('Sending audio to transcribe endpoint...');
+            const transcribeRes = await fetch('/api/audio/transcribe', {
+              method: 'POST',
+              body: formData,
+            });
+
+            if (!transcribeRes.ok) {
+              throw new Error(`Transcribe failed: ${transcribeRes.status}`);
+            }
+
+            const { text } = await transcribeRes.json();
+            console.log('Transcribed text:', text);
+
+            if (!text.trim()) {
+              setState('error');
+              console.warn('No speech detected');
+              return;
+            }
+
+            setTranscript(text);
+
+            // ===== TRANSITION TO THINKING =====
+            playFeedbackSound(523, 0.15); // C5 note
+            speak('Let me think about that.');
+            setState('thinking');
+
+            // ===== GET AI RESPONSE =====
+            console.log('Calling conversation API with:', text);
+            const conversationRes = await fetch('/api/conversation', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ message: text }),
+            });
+
+            if (!conversationRes.ok) {
+              throw new Error(
+                `Conversation API failed: ${conversationRes.status}`
+              );
+            }
+
+            const { response: responseText } = await conversationRes.json();
+            console.log('AI response:', responseText);
+
+            // ===== TRANSITION TO SPEAKING =====
+            setState('speaking');
+            setResponse(responseText);
+            speak(responseText);
+
+            // ===== RETURN TO IDLE =====
+            setTimeout(() => {
+              playFeedbackSound(349, 0.2); // F4 note, completion sound
+
+              // Save conversation to shared state
+              addConversation({
+                timestamp: new Date().toISOString(),
+                userMessage: text,
+                assistantMessage: responseText,
+                context: coreMemory?.context,
+              });
+              console.log('Conversation saved to shared state');
+
+              setState('idle');
+              setTranscript('');
+              setResponse('');
+            }, 3500);
+
+            // Clean up audio stream
+            stream.getTracks().forEach((track) => track.stop());
+          } catch (error) {
+            console.error('Error during transcription/conversation:', error);
+            setState('error');
+            stream.getTracks().forEach((track) => track.stop());
+          }
+        };
+
+        // Start recording
+        mediaRecorder.start();
+      } catch (error) {
+        console.error('Error accessing microphone:', error);
+        setState('error');
+      }
+    } else if (state === 'listening') {
+      // ===== STOP RECORDING (Second Click) =====
+      if (mediaRecorderRef.current) {
+        mediaRecorderRef.current.stop();
+      }
     }
   };
 

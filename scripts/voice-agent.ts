@@ -47,18 +47,19 @@ Status: Initializing...
 /**
  * Generate agent access token
  */
-function generateAgentToken(roomName: string): string {
+function generateAgentToken(roomName: string): Promise<string> {
   const token = new AccessToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET, {
     identity: AGENT_ID,
     name: AGENT_NAME,
     ttl: 24 * 60 * 60, // 24 hours
-    grants: {
-      room: roomName,
-      roomJoin: true,
-      canPublish: true,
-      canPublishData: true,
-      canSubscribe: true,
-    },
+  });
+
+  token.addGrant({
+    room: roomName,
+    roomJoin: true,
+    canPublish: true,
+    canPublishData: true,
+    canSubscribe: true,
   });
 
   return token.toJwt().then((jwt) => jwt).catch((err) => {

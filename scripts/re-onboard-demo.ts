@@ -13,7 +13,7 @@ async function reOnboardDemo() {
   // Create Letta agent
   const agent = await letta.agents.create({
     name: 'Demo Patient',
-    memory_blocks: [
+    memoryBlocks: [
       {
         label: 'human',
         value: 'Demo Patient is a 70-year-old individual with early-stage dementia. They live at home in San Francisco and prefer to be called "Demo".',

@@ -164,7 +164,7 @@ export async function POST(request: Request) {
       // Convert Letta passages to conversation format for system prompt
       relevantHistory = searchResults.map(passage => ({
         role: 'memory',
-        content: passage.text  // Contains "User: ... Assistant: ..." format
+        content: passage.content  // Contains "User: ... Assistant: ..." format
       }));
 
       console.log(

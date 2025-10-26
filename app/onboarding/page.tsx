@@ -109,7 +109,11 @@ export default function OnboardingPage() {
         if (response.status === 409) {
           setError('You have already completed onboarding. Redirecting...');
           setTimeout(() => {
-            router.push(role === 'patient' ? '/patient' : '/dashboard.html');
+            if (role === 'patient') {
+              router.push('/patient');
+            } else {
+              window.location.href = '/dashboard.html';
+            }
           }, 2000);
           return;
         }
@@ -132,7 +136,11 @@ export default function OnboardingPage() {
         console.warn('Onboarding warning:', data.warning);
       }
 
-      router.push(role === 'patient' ? '/patient' : '/dashboard.html');
+      if (role === 'patient') {
+        router.push('/patient');
+      } else {
+        window.location.href = '/dashboard.html';
+      }
     } catch (err) {
       console.error('Onboarding error:', err);
       setError('Network error. Please check your connection and try again.');
@@ -201,7 +209,11 @@ export default function OnboardingPage() {
       }
 
       // Success - redirect to regular app (pages will check localStorage for demo mode)
-      router.push(demoRole === 'patient' ? '/patient' : '/dashboard.html');
+      if (demoRole === 'patient') {
+        router.push('/patient');
+      } else {
+        window.location.href = '/dashboard.html';
+      }
     } catch (err) {
       console.error('Demo account error:', err);
       setError('Network error. Please try again.');
@@ -215,9 +227,9 @@ export default function OnboardingPage() {
     return (
       <div className="authPage">
         <div className="authContainer">
-          <Link href="/memora-cinematic.html" className="backLink">
+          <a href="/memora-cinematic.html" className="backLink">
             ← Back to Home
-          </Link>
+          </a>
 
           <div className="authCard">
             <h1 className="authTitle">Welcome to Memora</h1>
