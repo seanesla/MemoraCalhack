@@ -64,6 +64,8 @@ export async function GET(request: Request) {
     }
 
     // Generate access token
+    console.log('Generating LiveKit token with:', { effectiveUserId, userName, roomName });
+
     const token = new AccessToken(apiKey, apiSecret, {
       identity: effectiveUserId,
       name: userName,
@@ -79,7 +81,14 @@ export async function GET(request: Request) {
       canSubscribe: true,
     });
 
-    const jwt = token.toJwt();
+    const jwt = await token.toJwt();
+
+    console.log('Generated JWT length:', typeof jwt, jwt?.length);
+
+    if (!jwt || typeof jwt !== 'string') {
+      console.error('Invalid JWT generated:', jwt);
+      throw new Error('Failed to generate valid JWT token');
+    }
 
     return NextResponse.json({
       token: jwt,
