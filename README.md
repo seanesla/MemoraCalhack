@@ -4,6 +4,9 @@ A voice-first AI companion for dementia care with transparent patient consent co
 
 **Built for Cal Hacks 12.0 (Phase 11.3) • October 2025**
 
+🌐 **Live Production**: [getmemora.xyz](https://getmemora.xyz)
+🚀 **Deployed on Vercel** with automatic deployments from `main` branch
+
 ---
 
 ## Overview
@@ -26,8 +29,8 @@ Memora is a **full-stack dementia care platform** with:
 ## Tech Stack
 
 **Frontend**: Next.js 16 • React 19 • TypeScript • Tailwind CSS • Radix UI
-**Backend**: Supabase PostgreSQL • Prisma ORM • Clerk Auth • 18 API endpoints
-**AI**: Claude Haiku 4.5 (responses) • Letta (memory) • ChromaDB (archival) • Deepgram (voice) • Groq Kimi K2 (planned)
+**Backend**: Supabase Cloud PostgreSQL • Prisma ORM • Clerk Auth • 18 API endpoints
+**AI**: Claude Haiku 4.5 (responses) • Letta Cloud (memory + ChromaDB archival) • Deepgram (voice) • Groq Kimi K2 (behavioral insights)
 **Testing**: Vitest with 37+ tests (real APIs, no mocks)
 
 ---
@@ -35,22 +38,27 @@ Memora is a **full-stack dementia care platform** with:
 ## Getting Started
 
 ```bash
-# Prerequisites: Node.js 18+, Supabase CLI (brew install supabase/tap/supabase)
+# Prerequisites: Node.js 18+
 
 git clone https://github.com/yourusername/memora.git
 cd memora
 npm install
-supabase start                  # Start local PostgreSQL
-cp .env.example .env            # Fill in API keys
-npx prisma db push              # Apply schema
+cp .env.example .env            # Fill in cloud API keys (Supabase, Clerk, Anthropic, Deepgram, Letta)
 npm run dev                     # Start dev server
 # Open http://localhost:3000
 
-# Run tests (37+ tests, real APIs)
+# Run tests (37+ tests, real cloud APIs)
 npx vitest run
 ```
 
-**Key Routes**:
+**All services are cloud-hosted**:
+- **Production**: [getmemora.xyz](https://getmemora.xyz) (Vercel, auto-deploys from `main`)
+- **Database**: Supabase Cloud PostgreSQL (no local DB)
+- **Memory**: Letta Cloud (includes ChromaDB for archival storage)
+- **Auth**: Clerk
+- **AI**: Anthropic Claude, Deepgram, Groq
+
+**Key Routes** (all accessible at getmemora.xyz):
 - `/` - Landing page
 - `/patient` - Voice interface (React)
 - `/dashboard.html` - Caregiver dashboard (static HTML with client-side routing)
@@ -74,10 +82,13 @@ See `CLAUDE.md` for detailed architecture documentation.
 
 ---
 
-## Current Limitations
+## Current Status
 
-- **Groq**: Not yet integrated (env var exists but unused)
-- **LiveKit**: Token endpoint ready but voice UI doesn't use it yet
+- ✅ **Voice interface**: Fully functional (Deepgram STT/TTS, Claude responses, Letta memory)
+- ✅ **Groq Kimi K2**: Integrated for behavioral analysis (280k context window)
+- ✅ **Supabase Cloud**: 13 tables, 18 API endpoints, all connected
+- ⚠️ **Dashboard**: Uses hardcoded demo data (API calls exist but don't update DOM yet)
+- ⚠️ **LiveKit**: Token endpoint ready but voice UI doesn't use it yet
 - **Dashboard pages**: Only Overview and Voice Chat have real content; Timeline, Insights, Settings are placeholders
 - **Mock data**: `data/mock-data.ts` still used in `dashboard.html` (NOT in voice interface or APIs)
 
