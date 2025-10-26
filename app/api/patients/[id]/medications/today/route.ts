@@ -1,35 +1,10 @@
-/**
- * Today's Medications API
- *
- * GET /api/patients/[id]/medications/today
- *
- * Returns today's medication schedule with dose status.
- * Shows whether each medication has been taken, skipped, or is pending.
- * Includes completion statistics.
- */
-
 import { NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
+import { auth } from '@clerk/nextjs/server';
 
-/**
- * GET /api/patients/[id]/medications/today
- *
- * Returns today's medication schedule with status:
- * - medication info (name, dosage, timeOfDay, reminderTime)
- * - taken: boolean (true if dose recorded for today)
- * - takenAt: timestamp when dose was taken (null if not taken)
- * - skipped: boolean (true if dose was marked as skipped)
- * - notes: string (optional notes about the dose)
- *
- * Also returns stats:
- * - total: total number of active medications
- * - taken: number of doses taken today
- * - pending: number of doses not yet taken
- */
 export async function GET(
   request: Request,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verify authentication
@@ -41,9 +16,9 @@ export async function GET(
       );
     }
 
-    const { id: patientId } = await context.params;
+    const patientId = (await params).id;
 
-    // Verify patient exists
+    // Verify patient exists and user has access
     const patient = await prisma.patient.findUnique({
       where: { id: patientId },
     });
@@ -55,13 +30,29 @@ export async function GET(
       );
     }
 
-    // Get start and end of today
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const todayEnd = new Date();
-    todayEnd.setHours(23, 59, 59, 999);
+    // For demo mode, allow access to demo patient
+    // Otherwise verify user is the patient or a caregiver
+    const isDemoPatient = patient.clerkId === 'clerk_demo_patient_global';
+    if (!isDemoPatient && userId !== patient.clerkId) {
+      // Check if user is a caregiver
+      const caregiver = await prisma.caregiver.findUnique({
+        where: { clerkId: userId },
+      });
+      if (!caregiver) {
+        return NextResponse.json(
+          { error: 'Access denied' },
+          { status: 403 }
+        );
+      }
+    }
 
-    // Get all active medications with today's doses
+    // Get today's date (start of day)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    // Get all medications for patient
     const medications = await prisma.medication.findMany({
       where: {
         patientId,
@@ -71,53 +62,49 @@ export async function GET(
         doses: {
           where: {
             scheduledFor: {
-              gte: todayStart,
-              lte: todayEnd,
+              gte: today,
+              lt: tomorrow,
             },
           },
-          orderBy: {
-            scheduledFor: 'desc',
-          },
-          take: 1, // Only get the most recent dose for today
+          orderBy: { scheduledFor: 'asc' },
         },
-      },
-      orderBy: {
-        reminderTime: 'asc',
       },
     });
 
-    // Transform data to include dose status
-    const medicationsWithStatus = medications.map((med) => {
-      const todayDose = med.doses[0];
+    // Calculate statistics
+    let totalDoses = 0;
+    let takenDoses = 0;
+    let pendingDoses = 0;
 
-      return {
+    medications.forEach((med) => {
+      totalDoses += med.doses.length;
+      takenDoses += med.doses.filter((d) => d.takenAt !== null).length;
+      pendingDoses += med.doses.filter((d) => d.takenAt === null && !d.skipped).length;
+    });
+
+    return NextResponse.json({
+      medications: medications.map((med) => ({
         id: med.id,
         name: med.name,
         dosage: med.dosage,
         timeOfDay: med.timeOfDay,
-        reminderTime: med.reminderTime,
-        taken: todayDose ? !todayDose.skipped && todayDose.takenAt !== null : false,
-        skipped: todayDose?.skipped || false,
-        takenAt: todayDose?.takenAt || null,
-        notes: todayDose?.notes || null,
-      };
-    });
-
-    // Calculate stats
-    const stats = {
-      total: medicationsWithStatus.length,
-      taken: medicationsWithStatus.filter((m) => m.taken).length,
-      pending: medicationsWithStatus.filter((m) => !m.taken && !m.skipped).length,
-    };
-
-    return NextResponse.json({
-      medications: medicationsWithStatus,
-      stats,
+        doses: med.doses.map((dose) => ({
+          id: dose.id,
+          scheduledFor: dose.scheduledFor.toISOString(),
+          takenAt: dose.takenAt?.toISOString() || null,
+          skipped: dose.skipped,
+        })),
+      })),
+      stats: {
+        taken: takenDoses,
+        total: totalDoses,
+        pending: pendingDoses,
+      },
     });
   } catch (error) {
-    console.error('Error fetching today\'s medications:', error);
+    console.error('Error fetching medications:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch today\'s medications' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

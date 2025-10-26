@@ -101,6 +101,11 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     console.error('Middleware: Database error checking onboarding status:', error);
   }
 
+  // Allow patient API endpoints - authentication is checked in the endpoint itself
+  if (pathname.startsWith('/api/patients') || pathname.startsWith('/api/caregivers')) {
+    return;
+  }
+
   // Handle /onboarding and /api/onboard routes
   if (pathname.startsWith('/onboarding') || pathname === '/api/onboard') {
     // If already onboarded, redirect to role-appropriate page

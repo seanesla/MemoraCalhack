@@ -1,23 +1,10 @@
-/**
- * Today's Sleep Log API
- *
- * GET /api/patients/[id]/sleep-logs/today
- *
- * Returns today's sleep log if it exists, otherwise null.
- */
-
 import { NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
+import { auth } from '@clerk/nextjs/server';
 
-/**
- * GET /api/patients/[id]/sleep-logs/today
- *
- * Returns today's sleep log or null if not logged yet.
- */
 export async function GET(
   request: Request,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verify authentication
@@ -29,9 +16,9 @@ export async function GET(
       );
     }
 
-    const { id: patientId } = await context.params;
+    const patientId = (await params).id;
 
-    // Verify patient exists
+    // Verify patient exists and user has access
     const patient = await prisma.patient.findUnique({
       where: { id: patientId },
     });
@@ -43,28 +30,55 @@ export async function GET(
       );
     }
 
-    // Get start and end of today
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const todayEnd = new Date();
-    todayEnd.setHours(23, 59, 59, 999);
+    // For demo mode, allow access to demo patient
+    // Otherwise verify user is the patient or a caregiver
+    const isDemoPatient = patient.clerkId === 'clerk_demo_patient_global';
+    if (!isDemoPatient && userId !== patient.clerkId) {
+      // Check if user is a caregiver
+      const caregiver = await prisma.caregiver.findUnique({
+        where: { clerkId: userId },
+      });
+      if (!caregiver) {
+        return NextResponse.json(
+          { error: 'Access denied' },
+          { status: 403 }
+        );
+      }
+    }
+
+    // Get today's date (start of day)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
 
     // Get today's sleep log
     const sleepLog = await prisma.sleepLog.findFirst({
       where: {
         patientId,
         date: {
-          gte: todayStart,
-          lte: todayEnd,
+          gte: today,
+          lt: tomorrow,
         },
       },
     });
 
-    return NextResponse.json({ sleepLog: sleepLog || null });
+    return NextResponse.json({
+      sleepLog: sleepLog
+        ? {
+            id: sleepLog.id,
+            bedtime: sleepLog.bedtime?.toISOString() || null,
+            wakeTime: sleepLog.wakeTime?.toISOString() || null,
+            totalHours: sleepLog.totalHours,
+            quality: sleepLog.quality,
+            notes: sleepLog.notes,
+          }
+        : null,
+    });
   } catch (error) {
-    console.error('Error fetching today\'s sleep log:', error);
+    console.error('Error fetching sleep log:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch today\'s sleep log' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
