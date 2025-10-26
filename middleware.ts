@@ -1,19 +1,16 @@
 /**
- * Minimal Middleware Test
- * Testing if basic middleware works on Vercel
+ * Ultra-minimal middleware test
+ * NO CLERK - testing raw Next.js middleware
  */
 
 import { NextResponse, type NextRequest } from 'next/server';
-import { clerkMiddleware } from '@clerk/nextjs/server';
 
-export default clerkMiddleware(async (auth, request: NextRequest) => {
-  // Simply allow all requests for now
+export function middleware(request: NextRequest) {
   return NextResponse.next();
-});
+}
 
 export const config = {
   matcher: [
-    // Match all routes except static assets
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
