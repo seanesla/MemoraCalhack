@@ -27,23 +27,19 @@
             color: #FFFFFF;
             font-size: 18px;
             line-height: 1.6;
-            transform: scale(0.8);
-            transform-origin: top left;
-            width: 125%;
-            height: 125%;
             overflow: hidden;
         }
 
         .dashboard-container {
             display: flex;
-            height: 125vh;
+            height: 100vh;
             overflow: hidden;
         }
 
         /* Sidebar Navigation */
         .sidebar {
             width: 300px;
-            height: 125vh;
+            height: 100vh;
             background: #000000;
             border-right: 2px solid #FFFFFF;
             padding: 32px 24px;
@@ -267,7 +263,7 @@
             flex: 1;
             padding: 40px;
             background: #000000;
-            height: 125vh;
+            height: 100vh;
             overflow-y: auto;
         }
 
@@ -1674,8 +1670,92 @@
         .voice-interface-container {
             display: flex;
             flex-direction: column;
-            height: calc(125vh - 200px);
+            height: calc(100vh - 200px);
             max-width: 100%;
+        }
+
+        /* Conversation List Styles */
+        .conversation-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 1rem;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .conversation-list-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid #333;
+            cursor: pointer;
+            transition: background 0.2s, border-left 0.2s;
+            border-left: 3px solid transparent;
+        }
+
+        .conversation-list-item:hover {
+            background: rgba(255, 183, 77, 0.1);
+            border-left-color: #FFB74D;
+        }
+
+        .conversation-list-item:last-child {
+            border-bottom: none;
+        }
+
+        .conv-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #FFFFFF;
+            font-size: 14px;
+        }
+
+        .conv-time {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 2px;
+        }
+
+        .conv-count {
+            font-size: 12px;
+            color: #AAA;
+        }
+
+        .empty-state {
+            padding: 32px 20px;
+            text-align: center;
+            color: #888;
+            font-size: 14px;
+        }
+
+        .error-state, .error-message {
+            padding: 20px;
+            text-align: center;
+            color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+            border-radius: 8px;
+            margin: 16px;
+        }
+
+        .error-detail {
+            font-size: 12px;
+            color: #888;
+            margin: 8px 0;
+            font-family: 'Courier New', monospace;
+        }
+
+        .error-state button {
+            margin-top: 12px;
+            padding: 8px 16px;
+            background: #FFB74D;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            color: #000;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .error-state button:hover {
+            background: #FFA726;
         }
 
         /* Conversation display area (scrollable) */
@@ -2150,7 +2230,7 @@
                     </div>
                     <div class="user-avatar">AS</div>
                     <div class="user-details">
-                        <h4>Ava Smith</h4>
+                        <h4 id="caregiver-name">Loading...</h4>
                         <p>Caregiver</p>
                     </div>
                 </div>
@@ -2174,48 +2254,8 @@
                         </svg>
                         <h3>Privacy Consent Updates</h3>
                     </div>
-                    <div class="notification-list">
-                        <!-- Notification 1: Location disabled -->
-                        <div class="consent-notification">
-                            <div class="notification-icon">
-                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                </svg>
-                            </div>
-                            <div class="notification-content">
-                                <div class="notification-title">John chose to disable Location Tracking</div>
-                                <div class="notification-time">2 hours ago (2:45 PM)</div>
-                                <div class="notification-impact">Impact: Walking Monitoring alerts will not function while this is disabled. John can re-enable this at any time via his privacy controls.</div>
-                            </div>
-                        </div>
-
-                        <!-- Notification 2: Conversations disabled yesterday -->
-                        <div class="consent-notification">
-                            <div class="notification-icon">
-                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                </svg>
-                            </div>
-                            <div class="notification-content">
-                                <div class="notification-title">John chose to disable Conversation Recording</div>
-                                <div class="notification-time">Yesterday at 3:15 PM</div>
-                                <div class="notification-impact">Impact: The AI will not remember what John says. Context and continuity in conversations will be limited. Memory system updates will be paused.</div>
-                            </div>
-                        </div>
-
-                        <!-- Notification 3: Medication re-enabled -->
-                        <div class="consent-notification">
-                            <div class="notification-icon">
-                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
-                            <div class="notification-content">
-                                <div class="notification-title">John re-enabled Medication Reminders</div>
-                                <div class="notification-time">3 days ago</div>
-                                <div class="notification-impact">Medication tracking and reminders are now active again.</div>
-                            </div>
-                        </div>
+                    <div class="notification-list" id="privacy-consents-container">
+                        <!-- Privacy consents loaded from API -->
                     </div>
                 </div>
 
@@ -2223,43 +2263,10 @@
                     <!-- Behavioral Metrics Card -->
                     <div class="hero-card card">
                         <div class="card-label">Behavioral Metrics</div>
-                        <div class="behavioral-metrics-grid">
-                            <div class="metric-item">
-                                <div class="metric-label">Response Time</div>
-                                <div class="metric-value">1.8s <span class="metric-comparison">↓ from 2.1s baseline</span></div>
-                                <div class="metric-note">Faster than typical - indicates alertness</div>
-                            </div>
-                            <div class="metric-item">
-                                <div class="metric-label">Unprompted Memory Recall</div>
-                                <div class="metric-value">2 instances <span class="metric-comparison">↑ from 1/day baseline</span></div>
-                                <div class="metric-note">Lily's recital, Big Sur honeymoon - long-term retrieval working well</div>
-                            </div>
-                            <div class="metric-item">
-                                <div class="metric-label">Temporal Orientation</div>
-                                <div class="metric-value">2 date checks <span class="metric-comparison">= baseline (1-2/day)</span></div>
-                                <div class="metric-note">Within normal range for John</div>
-                            </div>
-                            <div class="metric-item">
-                                <div class="metric-label">Question Repetition</div>
-                                <div class="metric-value">5× "When is Ava visiting?" <span class="metric-comparison">↑ from 2-3× baseline</span></div>
-                                <div class="metric-note">May indicate anxiety about schedule - consider proactive reminder</div>
-                            </div>
+                        <div class="behavioral-metrics-grid" id="behavioral-metrics-container">
+                            <!-- Metrics loaded from API -->
                         </div>
-                        <div class="metrics-updated">Last updated: 9 minutes ago</div>
-                    </div>
-
-                    <!-- Photo Card -->
-                    <div class="photo-card">
-                        <div class="photo-placeholder">
-                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="64" height="64" style="opacity: 0.4;">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                        </div>
-                        <div class="photo-caption">
-                            <h3>Video call, 2:15 PM</h3>
-                            <p>Laughing with grandchildren. This was a beautiful moment.</p>
-                        </div>
+                        <div class="metrics-updated" id="behavioral-metrics-timestamp"></div>
                     </div>
 
                     <!-- Medications Card -->
@@ -2309,88 +2316,10 @@
                                 <div class="status-good" id="sleep-quality">Good rest</div>
                             </div>
 
-                            <!-- Mood Card -->
-                            <div class="card">
-                                <svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <div class="card-label">Mood</div>
-                                <div class="card-value">Cheerful</div>
-                                <div class="card-subtitle">All day</div>
-                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Today's Insights Section (Collapsible) -->
-                <div class="collapsible-section" data-section="insights">
-                    <div class="section-toggle" onclick="toggleSection('insights')">
-                        <div class="section-toggle-left">
-                            <svg class="section-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                            </svg>
-                            <h2 class="section-title">Today's Insights</h2>
-                        </div>
-                    </div>
-                    <div class="section-content">
-                        <div class="dashboard-grid">
-                            <!-- AI Insights Card -->
-                    <div class="insights-card">
-                        <div class="insights-header">
-                            <svg class="insights-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                            </svg>
-                            <div class="insights-title">Today's Insights</div>
-                        </div>
-                        <div class="insights-content">
-                            <p data-original="John showed strong engagement during social interactions today." data-simple="John was very social today.">John showed strong engagement during social interactions today.</p>
-
-                            <p data-original="He responded well during the video call. He mentioned specific memories about his grandchildren." data-simple="He talked about his grandchildren on the video call.">He responded well during the video call. He mentioned specific memories about his grandchildren.</p>
-
-                            <p data-original="His activity levels match his typical patterns. He completed his morning walk without prompting." data-simple="He went for his morning walk as usual.">His activity levels match his typical patterns. He completed his morning walk without prompting.</p>
-
-                            <div class="insight-tags">
-                                <span class="insight-tag">Social engagement up</span>
-                                <span class="insight-tag">Memory recall strong</span>
-                                <span class="insight-tag">Routine normal</span>
-                            </div>
-                        </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Recent Memories Section (Collapsible) -->
-                <div class="collapsible-section" data-section="memories">
-                    <div class="section-toggle" onclick="toggleSection('memories')">
-                        <div class="section-toggle-left">
-                            <svg class="section-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                            </svg>
-                            <h2 class="section-title">Recent Memory Moments</h2>
-                        </div>
-                        <span class="section-badge">4 today</span>
-                    </div>
-                    <div class="section-content">
-                        <div class="memory-grid">
-                        <div class="memory-card">
-                            <div class="memory-time">Today at 2:15 PM</div>
-                            <div class="memory-quote">I remember when Sarah was just learning to walk...</div>
-                            <div class="memory-context">During video call. He recalled his daughter's childhood without prompting.</div>
-                        </div>
-                        <div class="memory-card">
-                            <div class="memory-time">Today at 9:30 AM</div>
-                            <div class="memory-quote">The roses in the garden look beautiful today</div>
-                            <div class="memory-context">Morning walk. He showed awareness of surroundings.</div>
-                        </div>
-                        <div class="memory-card">
-                            <div class="memory-time">Today at 8:00 AM</div>
-                            <div class="memory-quote">Oh yes, it's Friday! Book club is tomorrow</div>
-                            <div class="memory-context">Morning routine. He showed strong time awareness.</div>
-                        </div>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <!-- Timeline Page -->
@@ -2409,113 +2338,8 @@
                 </div>
 
                 <!-- Timeline Events -->
-                <div class="timeline-container">
-                    <!-- Event 1: Medication Reminder -->
-                    <div class="timeline-event">
-                        <div class="timeline-dot severity-info">
-                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                            </svg>
-                        </div>
-                        <div class="timeline-connector"></div>
-                        <div class="timeline-event-card severity-info">
-                            <div class="event-header">
-                                <div class="event-title-section">
-                                    <div class="event-type">Conversation</div>
-                                    <div class="event-summary">Evening medication reminder acknowledged</div>
-                                </div>
-                                <div class="event-timestamp">6 minutes ago</div>
-                            </div>
-                            <div class="event-details">
-                                <div class="event-details-item">
-                                    <span class="event-details-label">Summary:</span> Patient confirmed taking Leqembi at 8:15 PM.
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Event 2: Wandering Alert -->
-                    <div class="timeline-event">
-                        <div class="timeline-dot severity-warning">
-                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                            </svg>
-                        </div>
-                        <div class="timeline-connector"></div>
-                        <div class="timeline-event-card severity-warning">
-                            <div class="event-header">
-                                <div class="event-title-section">
-                                    <div class="event-type">Movement Update</div>
-                                    <div class="event-summary">Took a walk outside during the evening</div>
-                                </div>
-                                <div class="event-timestamp">28 minutes ago</div>
-                            </div>
-                            <div class="event-details">
-                                <div class="event-details-item">
-                                    <span class="event-details-label">Distance:</span> 142 m from home (about half a block)
-                                </div>
-                                <div class="event-details-item">
-                                    <span class="event-details-label">Direction:</span> Northwest
-                                </div>
-                                <div class="event-details-item">
-                                    <span class="event-details-label">Location:</span> Side yard walkway
-                                </div>
-                                <div class="event-details-item">
-                                    <span class="event-details-label">Confidence:</span> 73%
-                                </div>
-                                <div class="event-details-item">
-                                    <span class="event-details-label">Follow-up:</span> Caregiver text check-in triggered
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Event 3: Pattern Change -->
-                    <div class="timeline-event">
-                        <div class="timeline-dot severity-info">
-                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-                            </svg>
-                        </div>
-                        <div class="timeline-connector"></div>
-                        <div class="timeline-event-card severity-info">
-                            <div class="event-header">
-                                <div class="event-title-section">
-                                    <div class="event-type">Pattern Change</div>
-                                    <div class="event-summary">Routine variance: skipped evening journaling</div>
-                                </div>
-                                <div class="event-timestamp">54 minutes ago</div>
-                            </div>
-                            <div class="event-details">
-                                <div class="event-details-item">
-                                    <span class="event-details-label">Follow-up:</span> Agent suggested reminiscing prompt instead
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Event 5: Memory Update -->
-                    <div class="timeline-event">
-                        <div class="timeline-dot severity-info">
-                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                            </svg>
-                        </div>
-                        <div class="timeline-event-card severity-info">
-                            <div class="event-header">
-                                <div class="event-title-section">
-                                    <div class="event-type">Memory Update</div>
-                                    <div class="event-summary">Core memory updated: granddaughter recital details</div>
-                                </div>
-                                <div class="event-timestamp">3 hours ago</div>
-                            </div>
-                            <div class="event-details">
-                                <div class="event-details-item">
-                                    <span class="event-details-label">Summary:</span> New memory cue about upcoming recital added
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <div class="timeline-container" id="timeline-events-container">
+                    <!-- Timeline events loaded from API -->
                 </div>
             </div>
 
@@ -2531,89 +2355,30 @@
                     <div id="analysis-meta" style="font-size: 14px; color: rgba(255,255,255,0.6);">
                         <span id="analysis-status">Loading insights...</span>
                     </div>
-                    <button id="analyze-btn" class="analyze-button" style="padding: 12px 24px; background: #A78BFA; color: #000; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; transition: all 0.2s;">
+                    <button id="analyze-btn" class="analyze-button" style="padding: 12px 24px; background: #FFB74D; color: #000; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; transition: all 0.2s;">
                         Analyze Conversations
                     </button>
                 </div>
 
-                <!-- Engagement Summary -->
+                <!-- Frequent Questions -->
                 <div class="insight-section">
                     <div class="insight-header">
-                        <h2 class="insight-title">Engagement Summary</h2>
-                        <span class="insight-badge positive">Positive Trend</span>
+                        <h2 class="insight-title">Frequent Questions</h2>
                     </div>
-                    <div class="summary-grid">
-                        <div class="summary-item">
-                            <div class="summary-item-value">Positive</div>
-                            <div class="summary-item-label">Mood</div>
-                        </div>
-                        <div class="summary-item">
-                            <div class="summary-item-value">4</div>
-                            <div class="summary-item-label">Day Streak</div>
-                        </div>
-                        <div class="summary-item">
-                            <div class="summary-item-value">1.8s</div>
-                            <div class="summary-item-label">Avg Response Time</div>
-                        </div>
-                    </div>
+                    <ul class="insight-list" id="frequent-questions-list">
+                        <!-- Loaded from API -->
+                    </ul>
                 </div>
 
                 <!-- Two-column grid for sections -->
                 <div class="insights-grid">
-                    <!-- Frequent Questions -->
-                    <div class="insight-section">
-                        <div class="insight-header">
-                            <h2 class="insight-title">Frequent Questions</h2>
-                            <span class="insight-badge neutral">10 Total</span>
-                        </div>
-                        <ul class="insight-list">
-                            <li class="insight-list-item">
-                                <div class="insight-item-text">
-                                    What time is Ava visiting tomorrow?
-                                    <div class="question-bar">
-                                        <div class="question-bar-fill" style="width: 100%;"></div>
-                                    </div>
-                                </div>
-                                <div class="insight-item-count">5</div>
-                            </li>
-                            <li class="insight-list-item">
-                                <div class="insight-item-text">
-                                    Where did I put my reading glasses?
-                                    <div class="question-bar">
-                                        <div class="question-bar-fill" style="width: 60%;"></div>
-                                    </div>
-                                </div>
-                                <div class="insight-item-count">3</div>
-                            </li>
-                            <li class="insight-list-item">
-                                <div class="insight-item-text">
-                                    What day is it today?
-                                    <div class="question-bar">
-                                        <div class="question-bar-fill" style="width: 40%;"></div>
-                                    </div>
-                                </div>
-                                <div class="insight-item-count">2</div>
-                            </li>
-                        </ul>
-                    </div>
-
                     <!-- Positive Moments -->
                     <div class="insight-section positive">
                         <div class="insight-header">
                             <h2 class="insight-title">Positive Moments</h2>
-                            <span class="insight-badge positive">2 Today</span>
                         </div>
-                        <ul class="insight-list">
-                            <li class="insight-list-item">
-                                <div class="insight-item-text">
-                                    Remembered granddaughter Lily's piano recital without prompt
-                                </div>
-                            </li>
-                            <li class="insight-list-item">
-                                <div class="insight-item-text">
-                                    Shared detailed story about honeymoon in Big Sur
-                                </div>
-                            </li>
+                        <ul class="insight-list" id="positive-moments-list">
+                            <!-- Loaded from API -->
                         </ul>
                     </div>
 
@@ -2621,19 +2386,9 @@
                     <div class="insight-section concern">
                         <div class="insight-header">
                             <h2 class="insight-title">Concerns</h2>
-                            <span class="insight-badge concern">Requires Attention</span>
                         </div>
-                        <ul class="insight-list">
-                            <li class="insight-list-item">
-                                <div class="insight-item-text">
-                                    Mild confusion about weekend schedule
-                                </div>
-                            </li>
-                            <li class="insight-list-item">
-                                <div class="insight-item-text">
-                                    Occasional frustration around misplaced items
-                                </div>
-                            </li>
+                        <ul class="insight-list" id="concerns-list">
+                            <!-- Loaded from API -->
                         </ul>
                     </div>
 
@@ -2641,47 +2396,10 @@
                     <div class="insight-section priority">
                         <div class="insight-header">
                             <h2 class="insight-title">Memory Topics to Reinforce</h2>
-                            <span class="insight-badge neutral">3 Topics</span>
                         </div>
-                        <ul class="insight-list">
-                            <li class="insight-list-item">
-                                <div class="insight-item-text">
-                                    Tomorrow's brunch with Mark
-                                </div>
-                            </li>
-                            <li class="insight-list-item">
-                                <div class="insight-item-text">
-                                    Medication cadence post-dinner
-                                </div>
-                            </li>
-                            <li class="insight-list-item">
-                                <div class="insight-item-text">
-                                    Where emergency contact card is stored
-                                </div>
-                            </li>
+                        <ul class="insight-list" id="memory-topics-list">
+                            <!-- Loaded from API -->
                         </ul>
-                    </div>
-                </div>
-
-                <!-- Conversation Patterns -->
-                <div class="insight-section">
-                    <div class="insight-header">
-                        <h2 class="insight-title">Conversation Patterns</h2>
-                        <span class="insight-badge neutral">Last 7 Days</span>
-                    </div>
-                    <div class="insights-grid">
-                        <div>
-                            <h3 style="font-size: 18px; font-weight: 600; color: #FFFFFF; margin-bottom: 8px;">Time of Day Distribution</h3>
-                            <div class="chart-placeholder">
-                                📊 Peak activity: Morning (8-11 AM)
-                            </div>
-                        </div>
-                        <div>
-                            <h3 style="font-size: 18px; font-weight: 600; color: #FFFFFF; margin-bottom: 8px;">Topic Distribution</h3>
-                            <div class="chart-placeholder">
-                                📈 Most common: Family (42%), Schedule (28%), Items (18%)
-                            </div>
-                        </div>
                     </div>
                 </div>
 
@@ -2717,6 +2435,11 @@
 
                 <!-- Voice Interface Container -->
                 <div class="voice-interface-container">
+                    <!-- Conversation List (shows all past conversations) -->
+                    <div id="conversation-list-container" class="conversation-list">
+                        <!-- Conversations will be rendered here via API -->
+                    </div>
+
                     <!-- Conversation Area (scrollable) -->
                     <div id="conversation-display" class="voice-conversation-display">
                         <!-- Empty state message (hidden when conversation starts) -->
@@ -2785,7 +2508,7 @@
                                     AI Reasoning
                                 </div>
                                 <div class="ai-reasoning-text">
-                                    Defines conversation style and tone. Stored in Core Memory because it's checked on every response to maintain consistent, appropriate communication. Manually editable by caregiver to adjust as John's needs change.
+                                    Defines conversation style and tone. Stored in Core Memory because it's checked on every response to maintain consistent, appropriate communication. Manually editable by caregiver to adjust as patient's needs change.
                                 </div>
                             </div>
                             <div class="core-memory-edit" id="core-memory-persona-edit" style="display: none;">
@@ -2803,7 +2526,7 @@
                                 <span class="core-memory-badge editable" onclick="editCoreMemory('patient')">EDIT</span>
                             </div>
                             <div class="core-memory-value" id="core-memory-patient-value">
-                                John Smith, 72. Retired middle-school literature teacher. Married to Ava. Loves jazz piano, gardening, and storytelling about road trips. Finds comfort in soft instrumental music and mint tea. Grandchildren: Lily (9), Mateo (6).
+                                Loading patient profile...
                             </div>
                             <div class="ai-reasoning">
                                 <div class="ai-reasoning-label">
@@ -2831,7 +2554,7 @@
                                 <span class="core-memory-badge editable" onclick="editCoreMemory('context')">EDIT</span>
                             </div>
                             <div class="core-memory-value" id="core-memory-context-value">
-                                It is Thursday evening. Earlier today John walked in Live Oak Park. Ava is preparing for tomorrow's brunch with neighbors. Weather is cool and foggy.
+                                Context will be populated based on recent activities and upcoming events.
                             </div>
                             <div class="ai-reasoning">
                                 <div class="ai-reasoning-label">
@@ -2841,7 +2564,7 @@
                                     AI Reasoning
                                 </div>
                                 <div class="ai-reasoning-text">
-                                    Auto-updated every 6 hours based on: time of day, recent conversations, caregiver calendar, local weather API. Provides situational awareness for contextually relevant responses without asking John to repeat information.
+                                    Auto-updated every 6 hours based on: time of day, recent conversations, caregiver calendar, local weather API. Provides situational awareness for contextually relevant responses without asking patient to repeat information.
                                 </div>
                             </div>
                             <div class="core-memory-edit" id="core-memory-context-edit" style="display: none;">
@@ -2864,16 +2587,16 @@
                     <div class="memory-grid">
                         <div class="archival-memory-card">
                             <div class="archival-header">
-                                <span class="archival-title">Lily's recital excitement</span>
+                                <span class="archival-title">Family event planning</span>
                                 <span class="archival-date">4 hours ago</span>
                             </div>
                             <div class="archival-summary">
-                                Discussed Lily's piano recital program and scheduled gentle reminders for morning practice cues.
+                                Discussed upcoming family event and scheduled gentle reminders for important activities.
                             </div>
                             <div class="archival-tags">
                                 <span class="archival-tag">family</span>
                                 <span class="archival-tag">upcoming</span>
-                                <span class="archival-tag">music</span>
+                                <span class="archival-tag">activities</span>
                             </div>
                             <div class="ai-reasoning">
                                 <div class="ai-reasoning-label">
@@ -2883,7 +2606,7 @@
                                     AI Reasoning
                                 </div>
                                 <div class="ai-reasoning-text">
-                                    Stored because: John mentioned Lily 3 times in this conversation (emotional significance detected). Tagged 'family' for semantic search. Will auto-archive after recital date passes unless John references it again.
+                                    Stored because: Patient mentioned family member multiple times in this conversation (emotional significance detected). Tagged 'family' for semantic search. Will auto-archive after event date passes unless referenced again.
                                 </div>
                             </div>
                         </div>
@@ -2894,7 +2617,7 @@
                                 <span class="archival-date">8 hours ago</span>
                             </div>
                             <div class="archival-summary">
-                                Captured John's joy describing tomato vines; built sensory prompt for weekend watering routine.
+                                Captured patient's joy describing tomato vines; built sensory prompt for weekend watering routine.
                             </div>
                             <div class="archival-tags">
                                 <span class="archival-tag">routine</span>
@@ -2930,7 +2653,7 @@
                                 <span class="alert-status enabled">ENABLED</span>
                             </div>
                             <div class="alert-details">
-                                Alerts when John walks beyond his usual area (about a city block from home).
+                                Alerts when patient walks beyond their usual area (about a city block from home).
                             </div>
                             <div class="alert-config">
                                 Usual area: 110m • Quiet Hours: 21:00-06:00 • Channels: SMS, Email
@@ -2943,7 +2666,7 @@
                                     AI Reasoning
                                 </div>
                                 <div class="ai-reasoning-text">
-                                    110m threshold based on John's walking pattern analysis (last 30 days): 95% of walks stay within this radius. Quiet hours prevent false alerts during sleep. Can be disabled by John at any time via privacy controls.
+                                    110m threshold based on patient's walking pattern analysis (last 30 days): 95% of walks stay within this radius. Quiet hours prevent false alerts during sleep. Can be disabled by patient at any time via privacy controls.
                                 </div>
                             </div>
                         </div>
@@ -2954,7 +2677,7 @@
                                 <span class="alert-status enabled">ENABLED</span>
                             </div>
                             <div class="alert-details">
-                                Tracks John's daily routines and alerts if he's unusually inactive.
+                                Tracks patient's daily routines and alerts if they're unusually inactive.
                             </div>
                             <div class="alert-config">
                                 Inactivity Threshold: 3 hours • Channels: Push, Email
@@ -2967,7 +2690,7 @@
                                     AI Reasoning
                                 </div>
                                 <div class="ai-reasoning-text">
-                                    3-hour threshold calibrated from John's typical activity rhythm. Baseline: usually active for 10-15 minutes every 2 hours during daytime. Alert triggers if no movement detected for 3+ consecutive hours (9:00-21:00 only).
+                                    3-hour threshold calibrated from patient's typical activity rhythm. Baseline: usually active for 10-15 minutes every 2 hours during daytime. Alert triggers if no movement detected for 3+ consecutive hours (9:00-21:00 only).
                                 </div>
                             </div>
                         </div>
@@ -3088,11 +2811,11 @@
                         </div>
                         <div class="form-group">
                             <label class="form-label">Caregiver Name</label>
-                            <input type="text" class="form-input" value="Ava Smith" disabled />
+                            <input type="text" class="form-input" id="settings-caregiver-name" value="Loading..." disabled />
                         </div>
                         <div class="form-group">
                             <label class="form-label">Email Address</label>
-                            <input type="email" class="form-input" value="ava.smith@example.com" disabled />
+                            <input type="email" class="form-input" id="settings-caregiver-email" value="Loading..." disabled />
                         </div>
                         <div class="form-group">
                             <label class="form-label">Timezone</label>
@@ -3148,8 +2871,8 @@
             conversations: [],
             coreMemory: {
                 persona: "Speak with warmth, steady pacing, and gentle affirmations. Offer grounding sensory cues when anxiety rises.",
-                patient: "John Smith, 72. Retired middle-school literature teacher. Married to Ava. Loves jazz piano, gardening, and storytelling about road trips. Finds comfort in soft instrumental music and mint tea. Grandchildren: Lily (9), Mateo (6).",
-                context: "It is Thursday evening. Earlier today John walked in Live Oak Park. Ava is preparing for tomorrow's brunch with neighbors. Weather is cool and foggy."
+                patient: "Patient profile loading from database...",
+                context: "Context will be populated based on recent activities and upcoming events."
             },
             timeline: [],
             insights: {
@@ -3519,7 +3242,7 @@
 
             setTimeout(() => {
                 voicePageState = 'responding';
-                addMessage('assistant', `Based on your question, I can share that John had a great day today. He completed 5 activities: a morning walk in the garden, a video call with Lily and Mateo at 2:15 PM, reading time, watering the tomato plants, and afternoon tea. His mood has been cheerful all day. Would you like more details about any specific activity?`);
+                addMessage('assistant', `Based on your question, I can share that the patient had a great day today. They completed 5 activities: a morning walk in the garden, a video call with family at 2:15 PM, reading time, watering the plants, and afternoon tea. Their mood has been cheerful all day. Would you like more details about any specific activity?`);
             }, 1500);
 
             setTimeout(() => {
@@ -3608,47 +3331,161 @@
             });
         }
 
-        // Load Voice Chat messages from shared state
-        function loadVoiceChatMessages() {
-            if (!conversationMessages) return;
+        // ===== CONVERSATION LOADING FROM API =====
 
-            const state = getSharedState();
-            const conversations = state.conversations || [];
+        /**
+         * Load conversation list from database via API
+         * REPLACES localStorage-based loading
+         */
+        async function loadVoiceChatMessages() {
+            try {
+                console.log(`Loading conversations for patient: ${DEMO_PATIENT_ID}`);
 
-            // Clear existing messages
-            conversationMessages.innerHTML = '';
-            messageIdCounter = 0;
+                const response = await fetch(`/api/conversations?patientId=${DEMO_PATIENT_ID}`, {
+                    credentials: 'include'
+                });
 
-            if (conversations.length === 0) {
-                // Show empty state
-                if (voiceEmptyState) {
-                    voiceEmptyState.classList.remove('hidden');
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                    throw new Error(`HTTP ${response.status}: ${errorData.error || response.statusText}`);
                 }
+
+                const data = await response.json();
+                const conversations = data.conversations || [];
+
+                console.log(`Loaded ${conversations.length} conversations from database`);
+
+                // Render conversation list
+                renderConversationList(conversations);
+
+            } catch (error) {
+                console.error('Failed to load conversations:', error);
+                showConversationError(error.message);
+            }
+        }
+
+        /**
+         * Render list of conversations in the sidebar
+         */
+        function renderConversationList(conversations) {
+            const container = document.getElementById('conversation-list-container');
+            if (!container) {
+                console.error('Conversation list container not found');
                 return;
             }
 
-            // Hide empty state
-            if (voiceEmptyState) {
-                voiceEmptyState.classList.add('hidden');
+            container.innerHTML = '';
+
+            if (conversations.length === 0) {
+                container.innerHTML = '<div class="empty-state">No conversations yet. Start chatting below!</div>';
+                return;
             }
 
-            // Display all conversations
             conversations.forEach(conv => {
-                const timestamp = new Date(conv.timestamp);
+                const item = document.createElement('div');
+                item.className = 'conversation-list-item';
 
-                // Add user message
-                addMessage('user', conv.userMessage, timestamp);
+                const lastMessageDate = new Date(conv.lastMessageAt);
+                const formattedTime = lastMessageDate.toLocaleString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
 
-                // Add assistant message (slightly after user message)
-                const assistantTimestamp = new Date(timestamp.getTime() + 1000);
-                addMessage('assistant', conv.assistantMessage, assistantTimestamp);
+                item.innerHTML = `
+                    <div class="conv-title">${conv.title || 'Untitled Conversation'}</div>
+                    <div class="conv-time">${formattedTime}</div>
+                    <div class="conv-count">${conv.messageCount || 0} messages</div>
+                `;
+
+                item.onclick = () => loadConversationMessages(conv.id);
+                container.appendChild(item);
             });
 
-            console.log(`Loaded ${conversations.length} conversations from shared state`);
+            console.log(`Rendered ${conversations.length} conversations in list`);
         }
 
-        // Initialize Voice Chat on page load
-        loadVoiceChatMessages();
+        /**
+         * Load messages for a specific conversation
+         */
+        async function loadConversationMessages(conversationId) {
+            try {
+                console.log(`Loading messages for conversation: ${conversationId}`);
+
+                const response = await fetch(`/api/conversations/${conversationId}/messages`, {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                    throw new Error(`HTTP ${response.status}: ${errorData.error || response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                if (!conversationMessages) {
+                    console.error('Conversation messages container not found');
+                    return;
+                }
+
+                // Clear existing messages
+                conversationMessages.innerHTML = '';
+                messageIdCounter = 0;
+
+                // Render messages
+                if (data.messages && data.messages.length > 0) {
+                    data.messages.forEach(msg => {
+                        addMessage(
+                            msg.role.toLowerCase(),
+                            msg.content,
+                            new Date(msg.timestamp)
+                        );
+                    });
+
+                    console.log(`Loaded ${data.messages.length} messages`);
+                }
+
+                // Hide empty state
+                if (voiceEmptyState) {
+                    voiceEmptyState.classList.add('hidden');
+                }
+
+            } catch (error) {
+                console.error('Failed to load messages:', error);
+                showMessageError(error.message);
+            }
+        }
+
+        /**
+         * Show error when conversation list fails to load
+         */
+        function showConversationError(message) {
+            const container = document.getElementById('conversation-list-container');
+            if (container) {
+                container.innerHTML = `
+                    <div class="error-state">
+                        <p><strong>Failed to load conversations</strong></p>
+                        <p class="error-detail">${message}</p>
+                        <button onclick="loadVoiceChatMessages()">Retry</button>
+                    </div>
+                `;
+            }
+        }
+
+        /**
+         * Show error when specific conversation messages fail to load
+         */
+        function showMessageError(message) {
+            if (conversationMessages) {
+                conversationMessages.innerHTML = `
+                    <div class="error-message">
+                        <p><strong>Error loading messages</strong></p>
+                        <p class="error-detail">${message}</p>
+                    </div>
+                `;
+            }
+        }
 
         // ===== CORE MEMORY MANAGEMENT =====
 
@@ -3730,13 +3567,18 @@
         // Otherwise use the global demo patient (has real seed data for testing)
         const DEMO_PATIENT_ID = localStorage.getItem('demo_patient_id') || 'cmh71axt20000pviy3l3siddm';
 
+        // Global variable to store patient details
+        let PATIENT_DATA = null;
+
         /**
          * Load all dashboard data from real APIs
          */
         async function loadDashboardData() {
             console.log('Loading dashboard data from real APIs...');
-            
-            // Load all data in parallel for performance
+
+            // Load patient details first, then other data in parallel
+            await loadPatientDetails();
+
             await Promise.all([
                 loadMedications(),
                 loadActivities(),
@@ -3744,6 +3586,79 @@
             ]);
 
             console.log('Dashboard data loaded successfully');
+        }
+
+        /**
+         * Load patient details from /api/patients/[id]
+         */
+        async function loadPatientDetails() {
+            try {
+                const response = await fetch(`/api/patients/${DEMO_PATIENT_ID}`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                PATIENT_DATA = data.patient;
+
+                // Update caregiver name in header
+                const caregiverNameEl = document.getElementById('caregiver-name');
+                if (caregiverNameEl && PATIENT_DATA.caregivers && PATIENT_DATA.caregivers[0]) {
+                    caregiverNameEl.textContent = PATIENT_DATA.caregivers[0].name;
+                }
+
+                // Update patient profile in Core Memory
+                const patientProfileEl = document.getElementById('core-memory-patient-value');
+                if (patientProfileEl) {
+                    const caregiver = PATIENT_DATA.caregivers && PATIENT_DATA.caregivers[0] ? PATIENT_DATA.caregivers[0].name : 'family caregiver';
+                    const location = PATIENT_DATA.locationLabel || 'their home';
+                    const stage = PATIENT_DATA.diagnosisStage || 'early-stage';
+
+                    patientProfileEl.textContent = `${PATIENT_DATA.name}, ${PATIENT_DATA.age}. ${stage} dementia. Currently lives in ${location}. Primary caregiver: ${caregiver}. ${PATIENT_DATA.currentRoutineFocus || 'Focuses on maintaining daily routines and familiar activities.'} Prefers to be called ${PATIENT_DATA.preferredName || PATIENT_DATA.name.split(' ')[0]}.`;
+                }
+
+                // Update settings page caregiver info
+                const settingsCaregiverName = document.getElementById('settings-caregiver-name');
+                const settingsCaregiverEmail = document.getElementById('settings-caregiver-email');
+                if (PATIENT_DATA.caregivers && PATIENT_DATA.caregivers[0]) {
+                    if (settingsCaregiverName) {
+                        settingsCaregiverName.value = PATIENT_DATA.caregivers[0].name;
+                    }
+                    if (settingsCaregiverEmail) {
+                        settingsCaregiverEmail.value = PATIENT_DATA.caregivers[0].email || 'Not provided';
+                    }
+                }
+
+                // Update chatbot DEFAULT_STATE patient bio
+                if (typeof DEFAULT_STATE !== 'undefined' && DEFAULT_STATE.coreMemory) {
+                    const caregiver = PATIENT_DATA.caregivers && PATIENT_DATA.caregivers[0] ? PATIENT_DATA.caregivers[0].name : 'caregiver';
+                    DEFAULT_STATE.coreMemory.patient = `${PATIENT_DATA.name}, ${PATIENT_DATA.age}. ${PATIENT_DATA.diagnosisStage || 'early-stage'} dementia. Lives with ${caregiver}. ${PATIENT_DATA.currentRoutineFocus || 'Focuses on maintaining daily routines.'} Prefers to be called ${PATIENT_DATA.preferredName || PATIENT_DATA.name.split(' ')[0]}.`;
+                }
+
+                console.log('Patient details loaded:', PATIENT_DATA);
+            } catch (error) {
+                console.error('Error loading patient details:', error);
+                // Fallback to default patient data if API fails
+                PATIENT_DATA = {
+                    name: 'Demo Patient',
+                    age: 72,
+                    preferredName: 'Demo',
+                    caregivers: [{ name: 'Demo Caregiver', email: null }]
+                };
+
+                // Update caregiver name with fallback
+                const caregiverNameEl = document.getElementById('caregiver-name');
+                if (caregiverNameEl) {
+                    caregiverNameEl.textContent = PATIENT_DATA.caregivers[0].name;
+                }
+
+                // Update patient profile with fallback
+                const patientProfileEl = document.getElementById('core-memory-patient-value');
+                if (patientProfileEl) {
+                    patientProfileEl.textContent = `${PATIENT_DATA.name}, ${PATIENT_DATA.age}. Lives at home with family caregiver. Focuses on maintaining daily routines. Prefers to be called ${PATIENT_DATA.preferredName}.`;
+                }
+            }
         }
 
         /**
@@ -3881,6 +3796,7 @@
 
         /**
          * Load insights from /api/patients/[id]/insights (includes Groq fields)
+         * REPLACES all hardcoded insight sections with API data
          */
         async function loadInsights() {
             try {
@@ -3891,6 +3807,7 @@
 
                 if (!insights) {
                     document.getElementById('analysis-status').textContent = 'No insights yet. Click "Analyze Conversations" to generate.';
+                    showInsightsEmpty();
                     return;
                 }
 
@@ -3903,6 +3820,13 @@
                 } else {
                     statusEl.textContent = 'Click "Analyze Conversations" for AI-powered insights';
                 }
+
+                // Render all insight sections from API data
+                renderEngagementSummary(insights);
+                renderFrequentQuestions(insights.frequentQuestions || []);
+                renderPositiveMoments(insights.positiveMoments || []);
+                renderConcerns(insights.concerns || []);
+                renderMemoryTopics(insights.memoryTopicsToReinforce || []);
 
                 // Show/hide Groq-generated sections
                 const trendsSection = document.getElementById('behavioral-trends-section');
@@ -3931,6 +3855,96 @@
                 console.error('Error loading insights:', error);
                 document.getElementById('analysis-status').textContent = 'Error loading insights';
             }
+        }
+
+        function showInsightsEmpty() {
+            const containers = [
+                'engagement-summary-container',
+                'frequent-questions-container',
+                'positive-moments-container',
+                'concerns-container',
+                'memory-topics-container'
+            ];
+            containers.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = '<p class="empty-state" style="padding: 20px; text-align: center; color: #888;">No data yet</p>';
+            });
+        }
+
+        function renderEngagementSummary(insights) {
+            // This is displayed in the summary-grid - leave as is for now
+            // Mood, streak, response time would need separate elements
+        }
+
+        function renderFrequentQuestions(questions) {
+            const container = document.getElementById('frequent-questions-list');
+            if (!container) return;
+
+            container.innerHTML = '';
+            if (questions.length === 0) {
+                container.innerHTML = '<li class="empty-state">No frequent questions yet</li>';
+                return;
+            }
+
+            questions.forEach(q => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <div class="frequent-question-text">${q.question || q}</div>
+                    <div class="frequent-question-badge">${q.count || ''}</div>
+                `;
+                container.appendChild(li);
+            });
+        }
+
+        function renderPositiveMoments(moments) {
+            const container = document.getElementById('positive-moments-list');
+            if (!container) return;
+
+            container.innerHTML = '';
+            if (moments.length === 0) {
+                container.innerHTML = '<li class="empty-state">No positive moments recorded yet</li>';
+                return;
+            }
+
+            moments.forEach(moment => {
+                const li = document.createElement('li');
+                li.innerHTML = `<div class="positive-moment">${moment}</div>`;
+                container.appendChild(li);
+            });
+        }
+
+        function renderConcerns(concerns) {
+            const container = document.getElementById('concerns-list');
+            if (!container) return;
+
+            container.innerHTML = '';
+            if (concerns.length === 0) {
+                container.innerHTML = '<li class="empty-state">No concerns identified</li>';
+                return;
+            }
+
+            concerns.forEach(concern => {
+                const li = document.createElement('li');
+                li.innerHTML = `<div class="concern">${concern}</div>`;
+                container.appendChild(li);
+            });
+        }
+
+        function renderMemoryTopics(topics) {
+            const container = document.getElementById('memory-topics-list');
+            if (!container) return;
+
+            container.innerHTML = '';
+            if (topics.length === 0) {
+                container.innerHTML = '<li class="empty-state">No memory topics to reinforce</li>';
+                return;
+            }
+
+            topics.forEach(topic => {
+                const li = document.createElement('li');
+                li.innerHTML = `<div class="memory-topic">${topic}</div>`;
+                container.appendChild(li);
+            });
         }
 
         /**
@@ -3990,6 +4004,383 @@
         // Hook into page navigation (when insights tab is clicked)
         document.querySelector('[data-page="insights"]')?.addEventListener('click', loadInsightsPage);
 
+        // Load timeline when timeline page is shown
+        function loadTimelinePage() {
+            loadTimeline();
+        }
+
+        // Hook into page navigation (when timeline tab is clicked)
+        document.querySelector('[data-page="timeline"]')?.addEventListener('click', loadTimelinePage);
+
+        // ===== PRIVACY CONSENTS LOADING FROM API =====
+
+        /**
+         * Load privacy consents from database via API
+         */
+        async function loadPrivacyConsents() {
+            try {
+                console.log(`Loading privacy consents for patient: ${DEMO_PATIENT_ID}`);
+
+                const response = await fetch(`/api/patients/${DEMO_PATIENT_ID}/privacy-consents`, {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                    throw new Error(`HTTP ${response.status}: ${errorData.error || response.statusText}`);
+                }
+
+                const data = await response.json();
+                const consents = data.consents || [];
+
+                console.log(`Loaded ${consents.length} privacy consents from database`);
+                renderPrivacyConsents(consents);
+
+            } catch (error) {
+                console.error('Error loading privacy consents:', error);
+                showPrivacyConsentsError(error.message);
+            }
+        }
+
+        /**
+         * Render privacy consent notifications
+         */
+        function renderPrivacyConsents(consents) {
+            const container = document.getElementById('privacy-consents-container');
+            if (!container) {
+                console.error('Privacy consents container not found');
+                return;
+            }
+
+            container.innerHTML = '';
+
+            if (consents.length === 0) {
+                container.innerHTML = '<p class="empty-state" style="padding: 20px; text-align: center; color: #888;">No recent privacy changes</p>';
+                return;
+            }
+
+            consents.forEach(consent => {
+                const item = document.createElement('div');
+                item.className = 'consent-notification';
+
+                const action = consent.enabled ? 're-enabled' : 'disable';
+                const typeName = formatConsentType(consent.type);
+                const timeAgo = formatTimeAgo(consent.changedAt);
+
+                // Choose icon based on enabled status
+                const iconPath = consent.enabled
+                    ? 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'  // checkmark
+                    : 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z'; // lock
+
+                item.innerHTML = `
+                    <div class="notification-icon">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${iconPath}" />
+                        </svg>
+                    </div>
+                    <div class="notification-content">
+                        <div class="notification-title">Patient chose to ${action} ${typeName}</div>
+                        <div class="notification-time">${timeAgo}</div>
+                        <div class="notification-impact">${consent.impact || 'No impact description provided'}</div>
+                    </div>
+                `;
+
+                container.appendChild(item);
+            });
+
+            console.log(`Rendered ${consents.length} privacy consent notifications`);
+        }
+
+        /**
+         * Format consent type for display
+         */
+        function formatConsentType(type) {
+            const map = {
+                'LOCATION_TRACKING': 'Location Tracking',
+                'CONVERSATION_RECORDING': 'Conversation Recording',
+                'MEDICATION_TRACKING': 'Medication Reminders',
+                'ACTIVITY_MONITORING': 'Activity Monitoring'
+            };
+            return map[type] || type;
+        }
+
+        /**
+         * Format timestamp to relative time
+         */
+        function formatTimeAgo(timestamp) {
+            const now = new Date();
+            const then = new Date(timestamp);
+            const diffMs = now - then;
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+            if (diffHours < 1) return 'Just now';
+            if (diffHours === 1) return '1 hour ago';
+            if (diffHours < 24) return `${diffHours} hours ago (${then.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })})`;
+            if (diffDays === 1) return `Yesterday at ${then.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
+            return `${diffDays} days ago`;
+        }
+
+        /**
+         * Show error when privacy consents fail to load
+         */
+        function showPrivacyConsentsError(message) {
+            const container = document.getElementById('privacy-consents-container');
+            if (container) {
+                container.innerHTML = `
+                    <div class="error-state">
+                        <p><strong>Failed to load privacy consents</strong></p>
+                        <p class="error-detail">${message}</p>
+                        <button onclick="loadPrivacyConsents()">Retry</button>
+                    </div>
+                `;
+            }
+        }
+
+        // ===== BEHAVIORAL METRICS LOADING FROM API =====
+
+        /**
+         * Load behavioral metrics from database via API
+         */
+        async function loadBehavioralMetrics() {
+            try {
+                console.log(`Loading behavioral metrics for patient: ${DEMO_PATIENT_ID}`);
+
+                const response = await fetch(`/api/patients/${DEMO_PATIENT_ID}/behavioral-metrics`, {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                    throw new Error(`HTTP ${response.status}: ${errorData.error || response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                if (!data.metrics) {
+                    showBehavioralMetricsEmpty();
+                    console.log('No behavioral metrics data available (table empty)');
+                    return;
+                }
+
+                renderBehavioralMetrics(data.metrics);
+                console.log('Loaded behavioral metrics from database');
+
+            } catch (error) {
+                console.error('Error loading behavioral metrics:', error);
+                showBehavioralMetricsError(error.message);
+            }
+        }
+
+        /**
+         * Render behavioral metrics
+         */
+        function renderBehavioralMetrics(metrics) {
+            const container = document.getElementById('behavioral-metrics-container');
+            if (!container) {
+                console.error('Behavioral metrics container not found');
+                return;
+            }
+
+            const rt = metrics.responseTime;
+            const ur = metrics.unpromptedRecall;
+            const to = metrics.temporalOrientation;
+            const qr = metrics.questionRepetition;
+
+            const rtComparison = rt.current < rt.baseline ? '↓' : '↑';
+            const rtNote = rt.current < rt.baseline ? 'Faster than typical - indicates alertness' : 'Slower than baseline - may indicate fatigue';
+
+            container.innerHTML = `
+                <div class="metric-item">
+                    <div class="metric-label">Response Time</div>
+                    <div class="metric-value">${(rt.current/1000).toFixed(1)}s <span class="metric-comparison">${rtComparison} from ${(rt.baseline/1000).toFixed(1)}s baseline</span></div>
+                    <div class="metric-note">${rtNote}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Unprompted Memory Recall</div>
+                    <div class="metric-value">${ur.count} instances <span class="metric-comparison">from baseline</span></div>
+                    <div class="metric-note">${ur.examples || 'No examples recorded'}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Temporal Orientation</div>
+                    <div class="metric-value">${to.dateChecks} date checks, ${to.timeChecks} time checks</div>
+                    <div class="metric-note">Within normal range for patient</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Question Repetition</div>
+                    <div class="metric-value">${qr.repeated || 'None detected'}</div>
+                    <div class="metric-note">Baseline: ${qr.baseline}× per day</div>
+                </div>
+            `;
+
+            // Add timestamp
+            const timestamp = document.getElementById('behavioral-metrics-timestamp');
+            if (timestamp) {
+                timestamp.textContent = `Last updated: ${formatTimeAgo(metrics.calculatedAt)}`;
+            }
+        }
+
+        /**
+         * Show empty state for behavioral metrics
+         */
+        function showBehavioralMetricsEmpty() {
+            const container = document.getElementById('behavioral-metrics-container');
+            if (container) {
+                container.innerHTML = '<p class="empty-state" style="padding: 40px; text-align: center; color: #888;">No behavioral data collected yet. Metrics will appear after conversations are analyzed.</p>';
+            }
+            const timestamp = document.getElementById('behavioral-metrics-timestamp');
+            if (timestamp) {
+                timestamp.textContent = '';
+            }
+        }
+
+        /**
+         * Show error for behavioral metrics
+         */
+        function showBehavioralMetricsError(message) {
+            const container = document.getElementById('behavioral-metrics-container');
+            if (container) {
+                container.innerHTML = `
+                    <div class="error-state">
+                        <p><strong>Failed to load behavioral metrics</strong></p>
+                        <p class="error-detail">${message}</p>
+                        <button onclick="loadBehavioralMetrics()">Retry</button>
+                    </div>
+                `;
+            }
+        }
+
+        // ===== TIMELINE EVENTS LOADING FROM API =====
+
+        /**
+         * Load timeline events from database via API
+         */
+        async function loadTimeline() {
+            try {
+                console.log(`Loading timeline events for patient: ${DEMO_PATIENT_ID}`);
+
+                const response = await fetch(`/api/patients/${DEMO_PATIENT_ID}/timeline`, {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                    throw new Error(`HTTP ${response.status}: ${errorData.error || response.statusText}`);
+                }
+
+                const data = await response.json();
+                const events = data.events || [];
+
+                console.log(`Loaded ${events.length} timeline events from database`);
+                renderTimelineEvents(events);
+
+            } catch (error) {
+                console.error('Error loading timeline events:', error);
+                showTimelineError(error.message);
+            }
+        }
+
+        /**
+         * Render timeline events
+         */
+        function renderTimelineEvents(events) {
+            const container = document.getElementById('timeline-events-container');
+            if (!container) {
+                console.error('Timeline events container not found');
+                return;
+            }
+
+            container.innerHTML = '';
+
+            if (events.length === 0) {
+                container.innerHTML = '<p class="empty-state" style="padding: 60px 40px; text-align: center; color: #888; font-size: 16px;">No timeline events yet. Events will appear as patient activity is tracked.</p>';
+                return;
+            }
+
+            events.forEach((event, index) => {
+                const item = document.createElement('div');
+                item.className = 'timeline-event';
+
+                const eventTime = new Date(event.timestamp);
+                const timeAgo = formatTimeAgo(event.timestamp);
+
+                // Map event type to icon
+                const iconPath = getTimelineIcon(event.type);
+
+                item.innerHTML = `
+                    <div class="timeline-dot severity-${event.severity.toLowerCase()}">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${iconPath}" />
+                        </svg>
+                    </div>
+                    ${index < events.length - 1 ? '<div class="timeline-connector"></div>' : ''}
+                    <div class="timeline-event-card severity-${event.severity.toLowerCase()}">
+                        <div class="event-header">
+                            <div class="event-title-section">
+                                <div class="event-type">${formatEventType(event.type)}</div>
+                                <div class="event-summary">${event.summary}</div>
+                            </div>
+                            <div class="event-timestamp">${timeAgo}</div>
+                        </div>
+                        ${event.details ? renderEventDetails(event.details) : ''}
+                    </div>
+                `;
+
+                container.appendChild(item);
+            });
+
+            console.log(`Rendered ${events.length} timeline events`);
+        }
+
+        /**
+         * Render event details JSON as formatted list
+         */
+        function renderEventDetails(details) {
+            if (!details || typeof details !== 'object') return '';
+
+            const items = Object.entries(details).map(([key, value]) => {
+                const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                return `
+                    <div class="event-details-item">
+                        <span class="event-details-label">${label}:</span> ${value}
+                    </div>
+                `;
+            }).join('');
+
+            return `<div class="event-details">${items}</div>`;
+        }
+
+        /**
+         * Get SVG icon path for timeline event type
+         */
+        function getTimelineIcon(type) {
+            const icons = {
+                'CONVERSATION': 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
+                'SENSOR_ALERT': 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z',
+                'PATTERN_CHANGE': 'M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01',
+                'MEMORY_UPDATE': 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z',
+                'MEDICATION': 'M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z',
+                'ACTIVITY': 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'
+            };
+            return icons[type] || icons['CONVERSATION'];
+        }
+
+        /**
+         * Show error for timeline
+         */
+        function showTimelineError(message) {
+            const container = document.getElementById('timeline-events-container');
+            if (container) {
+                container.innerHTML = `
+                    <div class="error-state">
+                        <p><strong>Failed to load timeline events</strong></p>
+                        <p class="error-detail">${message}</p>
+                        <button onclick="loadTimeline()">Retry</button>
+                    </div>
+                `;
+            }
+        }
+
         // Set current date
         const dateEl = document.getElementById('current-date');
         if (dateEl) {
@@ -4001,6 +4392,13 @@
         // Initialize dashboard data on page load
         loadDashboardData();
         loadInsights(); // Load insights on initial page load
+        loadPrivacyConsents(); // Load privacy consent updates
+        loadBehavioralMetrics(); // Load behavioral metrics
+
+        // Initialize Voice Chat conversations (after DEMO_PATIENT_ID is defined)
+        (async () => {
+            await loadVoiceChatMessages();
+        })();
     </script>
 </body>
 </html>

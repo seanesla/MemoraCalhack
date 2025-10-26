@@ -4,6 +4,9 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import { createClient, LiveTranscriptionEvents } from '@deepgram/sdk';
 import type { LiveClient } from '@deepgram/sdk';
+import { useLocalParticipant } from '@livekit/components-react';
+import { Track } from 'livekit-client';
+import { LiveKitAudioProcessor, VoiceActivityDetector } from '@/lib/audio-processing';
 
 type VoiceState = 'idle' | 'listening' | 'thinking' | 'speaking' | 'error';
 
@@ -34,6 +37,9 @@ export default function VoiceInterface() {
   // Authentication
   const { userId } = useAuth();
 
+  // LiveKit integration
+  const { localParticipant, microphoneTrack } = useLocalParticipant();
+
   // Core UI state
   const [state, setState] = useState<VoiceState>('idle');
   const [transcript, setTranscript] = useState<string>('');
@@ -44,10 +50,10 @@ export default function VoiceInterface() {
   const [showPrivacy, setShowPrivacy] = useState(false);
   const synthRef = useRef<SpeechSynthesis | null>(null);
 
-  // Audio capture refs
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioStreamRef = useRef<MediaStream | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
+  // LiveKit audio processing refs (replacing MediaRecorder)
+  const audioProcessorRef = useRef<LiveKitAudioProcessor | null>(null);
+  const vadRef = useRef<VoiceActivityDetector | null>(null);
+  const vadIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Privacy settings state
   const [privacySettings, setPrivacySettings] = useState({
@@ -473,235 +479,129 @@ export default function VoiceInterface() {
         deepgramConnectionRef.current = connection;
         addDebugLog('✅ Deepgram WebSocket ready for streaming');
 
-        // Request microphone access
-        addDebugLog('📍 Requesting microphone permission...');
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true,
-          },
+        // Enable LiveKit microphone
+        addDebugLog('📍 Enabling LiveKit microphone...');
+        await localParticipant.setMicrophoneEnabled(true, {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
         });
 
-        addDebugLog('✅ Microphone access granted');
-        audioStreamRef.current = stream;
+        // Wait for microphone track to be available
+        let attempts = 0;
+        while (!microphoneTrack && attempts < 50) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          attempts++;
+        }
 
-        // Set up audio level monitoring
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        audioContextRef.current = audioContext;
-        const analyser = audioContext.createAnalyser();
-        const source = audioContext.createMediaStreamSource(stream);
-        source.connect(analyser);
-        analyserRef.current = analyser;
+        if (!microphoneTrack || !microphoneTrack.mediaStreamTrack) {
+          throw new Error('Failed to get microphone track from LiveKit');
+        }
 
-        // Create MediaRecorder
-        addDebugLog('🎙️ Creating MediaRecorder...');
-        const mediaRecorder = new MediaRecorder(stream, {
-          mimeType: 'audio/webm',
+        addDebugLog('✅ LiveKit microphone enabled');
+
+        // Create audio processor for LiveKit → Deepgram
+        const processor = new LiveKitAudioProcessor({
+          sampleRate: 16000,
+          channelCount: 1,
+          chunkDurationMs: 100,
         });
 
-        mediaRecorderRef.current = mediaRecorder;
+        audioProcessorRef.current = processor;
 
-        // Stream audio chunks to Deepgram WebSocket in real-time (no batch storage)
-        mediaRecorder.ondataavailable = (event) => {
-          if (event.data.size > 0 && deepgramConnectionRef.current) {
-            deepgramConnectionRef.current.send(event.data);
-            addDebugLog(`📡 Streaming audio chunk: ${(event.data.size / 1024).toFixed(1)}KB`);
+        // Create VAD for silence detection
+        const vad = new VoiceActivityDetector(0.01, 3000, 16000);
+        vadRef.current = vad;
+
+        // Start processing audio with callback to stream to Deepgram
+        await processor.start(microphoneTrack.mediaStreamTrack, (pcmData: Int16Array) => {
+          // Send PCM data to Deepgram WebSocket
+          if (deepgramConnectionRef.current) {
+            // Convert Int16Array to ArrayBuffer for Deepgram
+            const buffer = pcmData.buffer;
+            deepgramConnectionRef.current.send(buffer);
           }
-        };
 
-        // Handle recording stop - use real-time transcript from textInput state
-        mediaRecorder.onstop = async () => {
-          console.log('🛑 Recording stopped');
-          try {
-            // Stop monitoring audio
-            if (recordingIntervalRef.current) {
-              clearInterval(recordingIntervalRef.current);
-            }
+          // Voice Activity Detection
+          if (vadRef.current) {
+            const silenceDetected = vadRef.current.detectSilence(pcmData, 100);
 
-            // Close Deepgram WebSocket connection
-            if (deepgramConnectionRef.current) {
-              deepgramConnectionRef.current.finish();
-              addDebugLog('🔒 Deepgram connection closed');
-            }
-
-            // Use real-time transcript from ref (populated by Transcript events)
-            const finalText = liveTranscriptRef.current.trim();
-            console.log('Final transcript from real-time stream:', finalText);
-            addDebugLog(`Final transcript: "${finalText}"`);
-
-            if (!finalText) {
-              addDebugLog('No speech detected');
-              setState('error');
-              stream.getTracks().forEach((track) => track.stop());
-              return;
-            }
-
-            setTranscript(finalText);
-            setTextInput(finalText); // Update textInput for display
-
-            // ===== TRANSITION TO THINKING =====
-            addDebugLog('💭 Processing your message...');
-            playFeedbackSound(523, 0.15); // C5 note
-            speak('Let me think about that.');
-            setState('thinking');
-
-            // ===== GET AI RESPONSE =====
-            addDebugLog(`🤖 Calling Claude with: "${finalText.substring(0, 50)}..."`);
-
-            // Build request body - include conversationId if it exists
-            const requestBody: any = { message: finalText };
-            if (currentConversationId) {
-              requestBody.conversationId = currentConversationId;
-            }
-
-            console.log('🤖 Sending to conversation API:', requestBody);
-
-            const conversationRes = await fetch('/api/conversation', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(requestBody),
-            });
-
-            console.log('📥 Conversation response:', {
-              status: conversationRes.status,
-              statusText: conversationRes.statusText,
-            });
-
-            if (!conversationRes.ok) {
-              const errorText = await conversationRes.text();
-              console.error('❌ Conversation API error:', errorText);
-              throw new Error(
-                `Conversation API failed: ${conversationRes.status} - ${errorText}`
-              );
-            }
-
-            const conversationData = await conversationRes.json();
-            console.log('✅ Conversation data received:', conversationData);
-
-            const { response: responseText, conversationId: newConvId } = conversationData;
-            console.log('🤖 Claude response:', responseText);
-            addDebugLog(`✅ Claude responded: "${responseText.substring(0, 50)}..."`);
-            addDebugLog('🔊 Speaking response...');
-
-            // Update conversation ID if this was a new conversation
-            if (!currentConversationId) {
-              setCurrentConversationId(newConvId);
-              setLastMessageTimestamp(new Date().toISOString());
-            }
-
-            // ===== TRANSITION TO SPEAKING =====
-            setState('speaking');
-            setResponse(responseText);
-            speak(responseText);
-
-            // ===== RETURN TO IDLE =====
-            addDebugLog('✨ Conversation complete, returning to idle...');
-            setTimeout(async () => {
-              playFeedbackSound(349, 0.2); // F4 note, completion sound
-
-              // Reload conversation messages from Supabase
-              try {
-                const messagesRes = await fetch(
-                  `/api/conversations/${newConvId}/messages`,
-                  { headers: { 'Content-Type': 'application/json' } }
-                );
-
-                if (messagesRes.ok) {
-                  const messagesData = await messagesRes.json();
-                  setConversationHistory(messagesData.messages);
-                }
-              } catch (error) {
-                console.warn('Failed to reload messages:', error);
+            if (silenceDetected) {
+              console.log('Silence detected after speaking - auto-stopping recording');
+              addDebugLog('Silence detected - auto-stopping');
+              
+              // Stop recording
+              if (audioProcessorRef.current) {
+                audioProcessorRef.current.stop();
+                audioProcessorRef.current = null;
               }
 
-              addDebugLog('💾 Conversation saved to Supabase');
+              if (vadIntervalRef.current) {
+                clearInterval(vadIntervalRef.current);
+                vadIntervalRef.current = null;
+              }
 
-              setState('idle');
-              setTranscript('');
-              setResponse('');
-              setTextInput(''); // Clear input for next message
-              setDebugLog([]);
-            }, 3500);
+              // Disable LiveKit microphone
+              localParticipant.setMicrophoneEnabled(false);
 
-            // Clean up audio stream
-            stream.getTracks().forEach((track) => track.stop());
-          } catch (error) {
-            addDebugLog(`⚠️ Error: ${(error as Error).message}`);
-            setState('error');
-            stream.getTracks().forEach((track) => track.stop());
+              // Trigger completion flow
+              handleRecordingComplete();
+            }
           }
-        };
+        });
 
-        // Start recording with timeslice for real-time streaming (250ms chunks)
         addDebugLog('▶️ Recording started. Listening for your voice...');
-        mediaRecorder.start(250); // 250ms chunks for low-latency streaming
 
-        // Start audio level monitoring with automatic silence detection
-        const SILENCE_THRESHOLD = 5; // percent
-        const SILENCE_DURATION_INTERVALS = 30; // 30 * 100ms = 3000ms (3 seconds)
-        let localSilenceCounter = 0;
-        let hasDetectedVoice = false; // Only start counting silence AFTER voice detected
-
+        // Start recording time counter
         const monitoringInterval = setInterval(() => {
-          if (analyserRef.current) {
-            const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
-            analyserRef.current.getByteFrequencyData(dataArray);
-            const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
-            const level = Math.min(100, (average / 255) * 100);
-            setAudioLevel(level);
-
-            // Voice Activity Detection (VAD)
-            if (level >= SILENCE_THRESHOLD) {
-              // Voice detected
-              hasDetectedVoice = true;
-              localSilenceCounter = 0; // Reset silence counter
-              if (recordingTime > 0.5) {
-                console.log('Voice detected');
-              }
-            } else if (hasDetectedVoice) {
-              // Silence detected AFTER voice was detected
-              localSilenceCounter++;
-
-              // Auto-stop recording if silent for 3 seconds AFTER speaking
-              if (localSilenceCounter >= SILENCE_DURATION_INTERVALS) {
-                console.log('Silence detected after speaking - auto-stopping recording');
-                addDebugLog('Silence detected - auto-stopping');
-                if (mediaRecorderRef.current?.state === 'recording') {
-                  mediaRecorderRef.current.stop();
-                }
-                clearInterval(monitoringInterval);
-                if (recordingIntervalRef.current) {
-                  recordingIntervalRef.current = null;
-                }
-              }
-            }
-          }
           setRecordingTime(t => t + 0.1);
         }, 100);
-        recordingIntervalRef.current = monitoringInterval;
+        vadIntervalRef.current = monitoringInterval;
+
         // Reset silence counter when starting new recording
         setSilenceCounter(0);
+
       } catch (error) {
         addDebugLog(`⚠️ Error: ${(error as Error).message}`);
         setState('error');
+        
+        // Cleanup on error
+        if (audioProcessorRef.current) {
+          audioProcessorRef.current.stop();
+          audioProcessorRef.current = null;
+        }
+        
+        if (vadIntervalRef.current) {
+          clearInterval(vadIntervalRef.current);
+          vadIntervalRef.current = null;
+        }
+
+        await localParticipant.setMicrophoneEnabled(false);
       }
+
     } else if (state === 'listening') {
       // ===== STOP RECORDING (Second Click) =====
-      console.log('Stop recording triggered', {
-        mediaRecorderState: mediaRecorderRef.current?.state,
-        recordingIntervalExists: !!recordingIntervalRef.current,
-      });
+      console.log('Stop recording triggered');
       addDebugLog('Stopping recording...');
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-        console.log('Calling mediaRecorder.stop()');
-        mediaRecorderRef.current.stop();
-      } else {
-        console.warn('MediaRecorder is not in recording state:', mediaRecorderRef.current?.state);
+
+      // Stop audio processor
+      if (audioProcessorRef.current) {
+        audioProcessorRef.current.stop();
+        audioProcessorRef.current = null;
       }
-      if (recordingIntervalRef.current) {
-        clearInterval(recordingIntervalRef.current);
+
+      // Clear VAD interval
+      if (vadIntervalRef.current) {
+        clearInterval(vadIntervalRef.current);
+        vadIntervalRef.current = null;
       }
+
+      // Disable LiveKit microphone
+      await localParticipant.setMicrophoneEnabled(false);
+
+      // Trigger completion flow
+      handleRecordingComplete();
+
     } else if (state === 'error') {
       // ===== RESET FROM ERROR STATE =====
       console.log('Resetting from error state');
@@ -709,6 +609,120 @@ export default function VoiceInterface() {
       setTextInput('');
       setTranscript('');
       setResponse('');
+    }
+  };
+
+  // Extracted completion logic (called after recording stops)
+  const handleRecordingComplete = async () => {
+    console.log('🛑 Recording stopped');
+    try {
+      // Close Deepgram WebSocket connection
+      if (deepgramConnectionRef.current) {
+        deepgramConnectionRef.current.finish();
+        addDebugLog('🔒 Deepgram connection closed');
+      }
+
+      // Use real-time transcript from ref (populated by Transcript events)
+      const finalText = liveTranscriptRef.current.trim();
+      console.log('Final transcript from real-time stream:', finalText);
+      addDebugLog(`Final transcript: "${finalText}"`);
+
+      if (!finalText) {
+        addDebugLog('No speech detected');
+        setState('error');
+        return;
+      }
+
+      setTranscript(finalText);
+      setTextInput(finalText); // Update textInput for display
+
+      // ===== TRANSITION TO THINKING =====
+      addDebugLog('💭 Processing your message...');
+      playFeedbackSound(523, 0.15); // C5 note
+      speak('Let me think about that.');
+      setState('thinking');
+
+      // ===== GET AI RESPONSE =====
+      addDebugLog(`🤖 Calling Claude with: "${finalText.substring(0, 50)}..."`);
+
+      // Build request body - include conversationId if it exists
+      const requestBody: any = { message: finalText };
+      if (currentConversationId) {
+        requestBody.conversationId = currentConversationId;
+      }
+
+      console.log('🤖 Sending to conversation API:', requestBody);
+
+      const conversationRes = await fetch('/api/conversation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+      });
+
+      console.log('📥 Conversation response:', {
+        status: conversationRes.status,
+        statusText: conversationRes.statusText,
+      });
+
+      if (!conversationRes.ok) {
+        const errorText = await conversationRes.text();
+        console.error('❌ Conversation API error:', errorText);
+        throw new Error(
+          `Conversation API failed: ${conversationRes.status} - ${errorText}`
+        );
+      }
+
+      const conversationData = await conversationRes.json();
+      console.log('✅ Conversation data received:', conversationData);
+
+      const { response: responseText, conversationId: newConvId } = conversationData;
+      console.log('🤖 Claude response:', responseText);
+      addDebugLog(`✅ Claude responded: "${responseText.substring(0, 50)}..."`);
+      addDebugLog('🔊 Speaking response...');
+
+      // Update conversation ID if this was a new conversation
+      if (!currentConversationId) {
+        setCurrentConversationId(newConvId);
+        setLastMessageTimestamp(new Date().toISOString());
+      }
+
+      // ===== TRANSITION TO SPEAKING =====
+      setState('speaking');
+      setResponse(responseText);
+      speak(responseText);
+
+      // ===== RETURN TO IDLE =====
+      addDebugLog('✨ Conversation complete, returning to idle...');
+      setTimeout(async () => {
+        playFeedbackSound(349, 0.2); // F4 note, completion sound
+
+        // Reload conversation messages from Supabase
+        try {
+          const messagesRes = await fetch(
+            `/api/conversations/${newConvId}/messages`,
+            { headers: { 'Content-Type': 'application/json' } }
+          );
+
+          if (messagesRes.ok) {
+            const messagesData = await messagesRes.json();
+            setConversationHistory(messagesData.messages);
+          }
+        } catch (error) {
+          console.warn('Failed to reload messages:', error);
+        }
+
+        addDebugLog('💾 Conversation saved to Supabase');
+
+        setState('idle');
+        setTranscript('');
+        setResponse('');
+        setTextInput(''); // Clear input for next message
+        setDebugLog([]);
+      }, 3500);
+
+    } catch (error) {
+      addDebugLog(`⚠️ Error: ${(error as Error).message}`);
+      setState('error');
     }
   };
 

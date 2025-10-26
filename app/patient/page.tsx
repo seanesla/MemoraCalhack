@@ -1,11 +1,88 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { useAuth } from '@clerk/nextjs';
 import VoiceInterface from '@/components/VoiceInterface';
+import { LiveKitRoomProvider } from '@/components/LiveKitRoomProvider';
 
 export default function PatientPage() {
+  const { userId, isSignedIn } = useAuth();
+  const [patientId, setPatientId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isSignedIn) {
+      setLoading(false);
+      return;
+    }
+
+    const fetchPatientId = async () => {
+      try {
+        // Use /api/conversations to verify patient exists
+        // The API internally looks up the patient from auth context
+        const response = await fetch('/api/conversations');
+
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error('Patient profile not found. Please complete onboarding.');
+          }
+          throw new Error('Failed to fetch patient information');
+        }
+
+        const data = await response.json();
+
+        // API returns conversations for the patient, which means patient exists
+        // We'll use userId as patientId since there's a 1:1 mapping
+        // The actual patientId will be determined server-side
+        setPatientId(userId || 'unknown');
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load patient profile';
+        console.error('Error fetching patient ID:', errorMessage);
+        setError(errorMessage);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPatientId();
+  }, [isSignedIn]);
+
+  if (!isSignedIn) {
+    return (
+      <main className="patient-page">
+        <div className="p-8 text-center text-white">
+          <p>Please sign in to access the voice interface.</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (loading) {
+    return (
+      <main className="patient-page">
+        <div className="p-8 text-center text-white">
+          <p>Loading...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (error || !patientId) {
+    return (
+      <main className="patient-page">
+        <div className="p-8 text-center text-red-500">
+          <p>{error || 'Failed to load patient profile'}</p>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="patient-page">
-      <VoiceInterface />
+      <LiveKitRoomProvider patientId={patientId}>
+        <VoiceInterface />
+      </LiveKitRoomProvider>
 
       <style jsx global>{`
         html, body {

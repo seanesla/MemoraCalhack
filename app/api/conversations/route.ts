@@ -50,15 +50,14 @@ export async function GET(request: Request) {
       targetPatientId = queryPatientId;
     }
 
-    // 2. Get recent conversations with messages
+    // 2. Get recent conversations with message counts
     const conversations = await prisma.conversation.findMany({
       where: {
         patientId: targetPatientId,
       },
       include: {
-        messages: {
-          orderBy: { timestamp: 'desc' },
-          take: 1, // Only get the most recent message for memory moments
+        _count: {
+          select: { messages: true },
         },
       },
       orderBy: { lastMessageAt: 'desc' },
@@ -71,7 +70,7 @@ export async function GET(request: Request) {
         title: conv.title || 'Untitled Conversation',
         startedAt: conv.startedAt.toISOString(),
         lastMessageAt: conv.lastMessageAt.toISOString(),
-        messageCount: conv.messages.length,
+        messageCount: conv._count.messages,
       })),
     });
   } catch (error) {
