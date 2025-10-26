@@ -494,7 +494,9 @@ export default function VoiceInterface() {
           attempts++;
         }
 
-        if (!microphoneTrack || !microphoneTrack.mediaStreamTrack) {
+        // Access the underlying audio track from the publication
+        const audioTrack = microphoneTrack?.audioTrack;
+        if (!microphoneTrack || !audioTrack || !audioTrack.mediaStreamTrack) {
           throw new Error('Failed to get microphone track from LiveKit');
         }
 
@@ -514,7 +516,7 @@ export default function VoiceInterface() {
         vadRef.current = vad;
 
         // Start processing audio with callback to stream to Deepgram
-        await processor.start(microphoneTrack.mediaStreamTrack, (pcmData: Int16Array) => {
+        await processor.start(audioTrack.mediaStreamTrack, (pcmData: Int16Array) => {
           // Send PCM data to Deepgram WebSocket
           if (deepgramConnectionRef.current) {
             // Convert Int16Array to ArrayBuffer for Deepgram
