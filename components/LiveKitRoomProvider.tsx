@@ -15,7 +15,10 @@ export function LiveKitRoomProvider({ children, patientId }: LiveKitRoomProvider
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isSignedIn) {
+    // Check for demo mode
+    const isDemoMode = typeof window !== 'undefined' && localStorage.getItem('demo_mode') === 'true';
+
+    if (!isSignedIn && !isDemoMode) {
       return;
     }
 
@@ -42,7 +45,10 @@ export function LiveKitRoomProvider({ children, patientId }: LiveKitRoomProvider
     fetchToken();
   }, [isSignedIn, patientId]);
 
-  if (!isSignedIn) {
+  // Check for demo mode
+  const isDemoMode = typeof window !== 'undefined' && localStorage.getItem('demo_mode') === 'true';
+
+  if (!isSignedIn && !isDemoMode) {
     return <div>Please sign in to use voice features.</div>;
   }
 

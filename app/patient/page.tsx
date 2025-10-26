@@ -12,12 +12,24 @@ export default function PatientPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isSignedIn) {
-      setLoading(false);
-      return;
-    }
+    const initPatient = async () => {
+      // Check for demo mode first
+      const isDemoMode = typeof window !== 'undefined' && localStorage.getItem('demo_mode') === 'true';
+      const demoPatientId = typeof window !== 'undefined' ? localStorage.getItem('demo_patient_id') : null;
 
-    const fetchPatientId = async () => {
+      if (isDemoMode && demoPatientId) {
+        console.log('Demo mode detected, using demo patient ID:', demoPatientId);
+        setPatientId(demoPatientId);
+        setLoading(false);
+        return;
+      }
+
+      // Regular auth flow for real users
+      if (!isSignedIn) {
+        setLoading(false);
+        return;
+      }
+
       try {
         // Use /api/conversations to verify patient exists
         // The API internally looks up the patient from auth context
@@ -45,10 +57,13 @@ export default function PatientPage() {
       }
     };
 
-    fetchPatientId();
-  }, [isSignedIn]);
+    initPatient();
+  }, [isSignedIn, userId]);
 
-  if (!isSignedIn) {
+  // Check for demo mode
+  const isDemoMode = typeof window !== 'undefined' && localStorage.getItem('demo_mode') === 'true';
+
+  if (!isSignedIn && !isDemoMode) {
     return (
       <main className="patient-page">
         <div className="p-8 text-center text-white">

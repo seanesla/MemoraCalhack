@@ -3593,7 +3593,7 @@
          */
         async function loadPatientDetails() {
             try {
-                const response = await fetch(`/api/patients/${DEMO_PATIENT_ID}`);
+                const response = await fetch(`/api/patients/${DEMO_PATIENT_ID}`, { credentials: 'include' });
 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -3666,7 +3666,7 @@
          */
         async function loadMedications() {
             try {
-                const response = await fetch(`/api/patients/${DEMO_PATIENT_ID}/medications/today`);
+                const response = await fetch(`/api/patients/${DEMO_PATIENT_ID}/medications/today`, { credentials: 'include' });
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -3708,7 +3708,7 @@
          */
         async function loadActivities() {
             try {
-                const response = await fetch(`/api/patients/${DEMO_PATIENT_ID}/daily-activities/today`);
+                const response = await fetch(`/api/patients/${DEMO_PATIENT_ID}/daily-activities/today`, { credentials: 'include' });
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -3750,7 +3750,7 @@
          */
         async function loadSleep() {
             try {
-                const response = await fetch(`/api/patients/${DEMO_PATIENT_ID}/sleep-logs/today`);
+                const response = await fetch(`/api/patients/${DEMO_PATIENT_ID}/sleep-logs/today`, { credentials: 'include' });
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -3800,7 +3800,7 @@
          */
         async function loadInsights() {
             try {
-                const response = await fetch(`/api/patients/${DEMO_PATIENT_ID}/insights`);
+                const response = await fetch(`/api/patients/${DEMO_PATIENT_ID}/insights`, { credentials: 'include' });
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
                 const { insights } = await response.json();
