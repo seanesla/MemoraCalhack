@@ -105,11 +105,13 @@ export async function POST(request: Request) {
         );
       }
     } else {
-      // Create new conversation
+      // Create new conversation with auto-generated title from first message
+      const title = message.length > 50 ? message.substring(0, 50) + '...' : message;
       conversation = await prisma.conversation.create({
         data: {
           patientId: targetPatientId,
           caregiverId,
+          title,
           startedAt: new Date(),
           lastMessageAt: new Date(),
         },

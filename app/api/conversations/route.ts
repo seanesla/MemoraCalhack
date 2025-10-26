@@ -13,49 +13,47 @@ export async function GET(request: Request) {
       );
     }
 
-    // Get the patientId from query params or find patient/caregiver
-    const { searchParams } = new URL(request.url);
-    const patientId = searchParams.get('patientId');
+    // 1. Determine if user is a patient or caregiver
+    let targetPatientId: string | null = null;
 
-    if (!patientId) {
-      return NextResponse.json(
-        { error: 'patientId query parameter is required' },
-        { status: 400 }
-      );
-    }
-
-    // Verify patient exists and user has access
+    // Check if user is a patient
     const patient = await prisma.patient.findUnique({
-      where: { id: patientId },
+      where: { clerkId: userId },
     });
 
-    if (!patient) {
-      return NextResponse.json(
-        { error: 'Patient not found' },
-        { status: 404 }
-      );
-    }
-
-    // For demo mode, allow access to demo patient
-    // Otherwise verify user is the patient or a caregiver
-    const isDemoPatient = patient.clerkId === 'clerk_demo_patient_global';
-    if (!isDemoPatient && userId !== patient.clerkId) {
+    if (patient) {
+      targetPatientId = patient.id;
+    } else {
       // Check if user is a caregiver
       const caregiver = await prisma.caregiver.findUnique({
         where: { clerkId: userId },
       });
+
       if (!caregiver) {
         return NextResponse.json(
-          { error: 'Access denied' },
-          { status: 403 }
+          { error: 'User not found - must complete onboarding' },
+          { status: 404 }
         );
       }
+
+      // If caregiver, get patientId from query params
+      const { searchParams } = new URL(request.url);
+      const queryPatientId = searchParams.get('patientId');
+
+      if (!queryPatientId) {
+        return NextResponse.json(
+          { error: 'patientId query parameter required for caregivers' },
+          { status: 400 }
+        );
+      }
+
+      targetPatientId = queryPatientId;
     }
 
-    // Get recent conversations with messages
+    // 2. Get recent conversations with messages
     const conversations = await prisma.conversation.findMany({
       where: {
-        patientId,
+        patientId: targetPatientId,
       },
       include: {
         messages: {
@@ -73,12 +71,7 @@ export async function GET(request: Request) {
         title: conv.title || 'Untitled Conversation',
         startedAt: conv.startedAt.toISOString(),
         lastMessageAt: conv.lastMessageAt.toISOString(),
-        messages: conv.messages.map((msg) => ({
-          id: msg.id,
-          role: msg.role,
-          content: msg.content,
-          timestamp: msg.timestamp.toISOString(),
-        })),
+        messageCount: conv.messages.length,
       })),
     });
   } catch (error) {

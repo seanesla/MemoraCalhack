@@ -1,17 +1,38 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import {
-  getCoreMemory,
-  addConversation,
-  initSharedState,
-  onStateChange,
-  type MemoraCoreMemory
-} from '@/lib/shared-state';
+import { useAuth } from '@clerk/nextjs';
 
 type VoiceState = 'idle' | 'listening' | 'thinking' | 'speaking' | 'error';
 
+interface Message {
+  id: string;
+  role: 'USER' | 'ASSISTANT';
+  content: string;
+  timestamp: string;
+  edited: boolean;
+  editedAt: string | null;
+}
+
+interface Conversation {
+  id: string;
+  title: string;
+  startedAt: string;
+  lastMessageAt: string;
+  messageCount: number;
+}
+
+interface MemoraCoreMemory {
+  persona: string;
+  patient: string;
+  context: string;
+}
+
 export default function VoiceInterface() {
+  // Authentication
+  const { userId } = useAuth();
+
+  // Core UI state
   const [state, setState] = useState<VoiceState>('idle');
   const [transcript, setTranscript] = useState<string>('');
   const [response, setResponse] = useState<string>('');
@@ -21,7 +42,7 @@ export default function VoiceInterface() {
   const [showPrivacy, setShowPrivacy] = useState(false);
   const synthRef = useRef<SpeechSynthesis | null>(null);
 
-  // Audio capture refs for Phase 11.1 STT integration
+  // Audio capture refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioStreamRef = useRef<MediaStream | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -34,32 +55,93 @@ export default function VoiceInterface() {
     activityMonitoring: true
   });
 
-  // Speech synthesis DISABLED - see speak() function
-  // Will be replaced with proper voice in Phase 11 (LiveKit + Deepgram)
+  // Debug/detailed UI state
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [audioLevel, setAudioLevel] = useState(0);
+  const [apiStatus, setApiStatus] = useState<string>('Ready');
+  const [debugLog, setDebugLog] = useState<string[]>([]);
+  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
 
-  // Initialize shared state and load Core Memory
+  // Supabase conversation state (replacing localStorage)
+  const [patientId, setPatientId] = useState<string | null>(null);
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+  const [conversationHistory, setConversationHistory] = useState<Message[]>([]);
+  const [allConversations, setAllConversations] = useState<Conversation[]>([]);
+  const [showSessionList, setShowSessionList] = useState(false);
+  const [lastMessageTimestamp, setLastMessageTimestamp] = useState<string | null>(null);
+
+  // Chat interface state
+  const [textInput, setTextInput] = useState<string>('');
+  const [silenceCounter, setSilenceCounter] = useState(0);
+  const chatHistoryContainerRef = useRef<HTMLDivElement | null>(null);
+
+  // Debug helper function
+  const addDebugLog = (message: string) => {
+    console.log('[DEBUG]', message);
+    setDebugLog(prev => [...prev.slice(-9), `${new Date().toLocaleTimeString()}: ${message}`]);
+    setApiStatus(message);
+  };
+
+  // Initialize: Load patient ID, conversations list, and most recent conversation
   useEffect(() => {
-    initSharedState();
-    const memory = getCoreMemory();
-    setCoreMemory(memory);
+    if (!userId) return;
 
-    // Subscribe to Core Memory updates from dashboard
-    const unsubscribe = onStateChange((type, data) => {
-      if (type === 'core_memory_updated') {
-        setCoreMemory(data);
-        console.log('Core Memory updated from dashboard:', data);
+    const initializeConversations = async () => {
+      try {
+        // Get list of all conversations for authenticated user
+        // API will determine patient from auth context
+        const conversationsRes = await fetch('/api/conversations', {
+          headers: { 'Content-Type': 'application/json' },
+        });
+
+        if (!conversationsRes.ok) {
+          console.error('Failed to fetch conversations:', conversationsRes.status);
+          return;
+        }
+
+        const conversationsData = await conversationsRes.json();
+        setAllConversations(conversationsData.conversations);
+
+        // Load most recent conversation if it exists
+        if (conversationsData.conversations.length > 0) {
+          const mostRecent = conversationsData.conversations[0];
+          setCurrentConversationId(mostRecent.id);
+          setLastMessageTimestamp(mostRecent.lastMessageAt);
+
+          // Fetch messages for most recent conversation
+          const messagesRes = await fetch(
+            `/api/conversations/${mostRecent.id}/messages`,
+            { headers: { 'Content-Type': 'application/json' } }
+          );
+
+          if (messagesRes.ok) {
+            const messagesData = await messagesRes.json();
+            setConversationHistory(messagesData.messages);
+          }
+        }
+      } catch (error) {
+        console.error('Error initializing conversations:', error);
       }
-    });
+    };
 
-    return unsubscribe;
-  }, []);
+    initializeConversations();
+  }, [userId]);
+
+  // Auto-scroll chat history to bottom when new messages arrive
+  useEffect(() => {
+    if (chatHistoryContainerRef.current) {
+      chatHistoryContainerRef.current.scrollTop = chatHistoryContainerRef.current.scrollHeight;
+    }
+  }, [conversationHistory]);
 
   // Voice-guided onboarding - speak welcome message on first load
   useEffect(() => {
     if (!hasSpokenWelcome) {
       // Wait a moment for page to settle, then speak welcome
       const welcomeTimeout = setTimeout(async () => {
-        await speak("Hello, I'm Memora. I'm here with you. Press the circle to talk to me.");
+        await speak("Hello, I'm Memora. I'm here with you. You can talk to me or type a message.");
         setHasSpokenWelcome(true);
       }, 1000);
 
@@ -139,6 +221,96 @@ export default function VoiceInterface() {
     }
   };
 
+  // Handle text message submission
+  const handleTextSubmit = async () => {
+    if (!textInput.trim()) return;
+
+    const userMessage = textInput.trim();
+    setTextInput('');
+
+    try {
+      // Transition to thinking state
+      setState('thinking');
+      playFeedbackSound(523, 0.15); // C5 note
+      speak('Let me think about that.');
+
+      console.log('Sending text to conversation API:', { message: userMessage, conversationId: currentConversationId });
+
+      // Build request body - only include conversationId if it has a value
+      const requestBody: any = { message: userMessage };
+      if (currentConversationId) {
+        requestBody.conversationId = currentConversationId;
+      }
+
+      // Send to Claude API
+      const conversationRes = await fetch('/api/conversation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!conversationRes.ok) {
+        const errorText = await conversationRes.text();
+        console.error('Conversation API error:', errorText);
+        throw new Error(`Conversation API failed: ${conversationRes.status}`);
+      }
+
+      const conversationData = await conversationRes.json();
+      const responseText = conversationData.response;
+      const newConversationId = conversationData.conversationId;
+
+      console.log('Claude response received:', responseText);
+
+      // Update conversation ID if this was a new conversation
+      if (!currentConversationId) {
+        setCurrentConversationId(newConversationId);
+        setLastMessageTimestamp(new Date().toISOString());
+      }
+
+      // Reload conversation messages from database
+      try {
+        const messagesRes = await fetch(
+          `/api/conversations/${newConversationId}/messages`,
+          { headers: { 'Content-Type': 'application/json' } }
+        );
+
+        if (messagesRes.ok) {
+          const messagesData = await messagesRes.json();
+          setConversationHistory(messagesData.messages);
+        }
+      } catch (error) {
+        console.warn('Failed to reload conversation messages:', error);
+      }
+
+      // Refresh conversation list in modal (so "Back" shows new conversation)
+      try {
+        const refreshRes = await fetch('/api/conversations', {
+          headers: { 'Content-Type': 'application/json' },
+        });
+
+        if (refreshRes.ok) {
+          const refreshData = await refreshRes.json();
+          setAllConversations(refreshData.conversations);
+        }
+      } catch (error) {
+        console.warn('Failed to refresh conversation list:', error);
+      }
+
+      // Transition to speaking state
+      setState('speaking');
+      playFeedbackSound(349, 0.2); // F4 note
+      speak(responseText);
+
+      // Return to idle after speech completes
+      setTimeout(() => {
+        setState('idle');
+      }, responseText.length * 50);
+    } catch (error) {
+      console.error('Error in text submission:', error);
+      setState('error');
+    }
+  };;
+
   // Update time every minute for ambient context display
   useEffect(() => {
     const timer = setInterval(() => {
@@ -148,15 +320,61 @@ export default function VoiceInterface() {
     return () => clearInterval(timer);
   }, []);
 
+  // Check if 30+ minutes have passed since last message
+  const isTimeGapTooLarge = (): boolean => {
+    if (!lastMessageTimestamp) return false;
+    const now = new Date();
+    const lastMessage = new Date(lastMessageTimestamp);
+    const diffMinutes = (now.getTime() - lastMessage.getTime()) / 1000 / 60;
+    return diffMinutes > 30;
+  };
+
+  // Load a specific conversation's messages
+  const loadConversation = async (conversationId: string) => {
+    try {
+      const messagesRes = await fetch(`/api/conversations/${conversationId}/messages`, {
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (messagesRes.ok) {
+        const messagesData = await messagesRes.json();
+        setConversationHistory(messagesData.messages);
+        setCurrentConversationId(conversationId);
+        setLastMessageTimestamp(messagesData.conversation.lastMessageAt);
+        setShowSessionList(false);
+      }
+    } catch (error) {
+      console.error('Failed to load conversation:', error);
+    }
+  };
+
+  // Start a new conversation
+  const startNewConversation = () => {
+    setCurrentConversationId(null);
+    setConversationHistory([]);
+    setLastMessageTimestamp(null);
+    setShowSessionList(false);
+  };
+
   const handlePress = async () => {
     if (state === 'idle') {
       // ===== START RECORDING (First Click) =====
       try {
+        // Check if we need to start a new conversation due to time gap
+        if (currentConversationId && isTimeGapTooLarge()) {
+          console.log('30+ minute gap detected, starting new conversation');
+          addDebugLog('Starting new session (30+ min gap)');
+          startNewConversation();
+        }
+
+        addDebugLog('🎤 Starting recording...');
         playFeedbackSound(440, 0.1); // A4 note, short beep
         speak("I'm listening. Take your time.");
         setState('listening');
+        setRecordingTime(0);
 
         // Request microphone access
+        addDebugLog('📍 Requesting microphone permission...');
         const stream = await navigator.mediaDevices.getUserMedia({
           audio: {
             echoCancellation: true,
@@ -165,10 +383,28 @@ export default function VoiceInterface() {
           },
         });
 
+        addDebugLog('✅ Microphone access granted');
         audioStreamRef.current = stream;
         audioChunksRef.current = [];
 
+        // Set up audio level monitoring
+        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        audioContextRef.current = audioContext;
+        const analyser = audioContext.createAnalyser();
+        const source = audioContext.createMediaStreamSource(stream);
+        source.connect(analyser);
+        analyserRef.current = analyser;
+
+        // Start monitoring audio levels
+        const monitorAudio = () => {
+          const dataArray = new Uint8Array(analyser.frequencyBinCount);
+          analyser.getByteFrequencyData(dataArray);
+          const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+          setAudioLevel(Math.min(100, (average / 255) * 100));
+        };
+
         // Create MediaRecorder
+        addDebugLog('🎙️ Creating MediaRecorder...');
         const mediaRecorder = new MediaRecorder(stream, {
           mimeType: 'audio/webm',
         });
@@ -179,62 +415,115 @@ export default function VoiceInterface() {
         mediaRecorder.ondataavailable = (event) => {
           if (event.data.size > 0) {
             audioChunksRef.current.push(event.data);
+            addDebugLog(`📦 Audio chunk received: ${(event.data.size / 1024).toFixed(1)}KB`);
           }
         };
 
         // Handle recording stop
         mediaRecorder.onstop = async () => {
+          console.log('🛑 ONSTOP CALLBACK TRIGGERED');
           try {
+            // Stop monitoring audio
+            if (recordingIntervalRef.current) {
+              clearInterval(recordingIntervalRef.current);
+            }
+
             // ===== TRANSCRIBE AUDIO =====
+            console.log('🛑 RECORDING STOPPED. Audio chunks collected:', audioChunksRef.current.length);
+            addDebugLog('⏹️  Recording stopped. Preparing audio blob...');
             const audioBlob = new Blob(audioChunksRef.current, {
               type: 'audio/webm',
             });
+            console.log('📊 AUDIO BLOB CREATED:', {
+              size: audioBlob.size,
+              type: audioBlob.type,
+              chunks: audioChunksRef.current.length,
+            });
+            addDebugLog(`📊 Total audio blob size: ${(audioBlob.size / 1024).toFixed(1)}KB`);
 
             const formData = new FormData();
             formData.append('audio', audioBlob);
 
-            console.log('Sending audio to transcribe endpoint...');
+            addDebugLog('🔄 Sending to Deepgram STT endpoint...');
+            console.log('📤 SENDING TO TRANSCRIBE:', {
+              blobSize: audioBlob.size,
+              blobType: audioBlob.type,
+              formDataEntries: Array.from(formData.entries()).map(([k, v]) => `${k}: ${v instanceof Blob ? `Blob(${v.size}bytes, ${v.type})` : v}`),
+            });
+
             const transcribeRes = await fetch('/api/audio/transcribe', {
               method: 'POST',
               body: formData,
             });
 
+            console.log('📥 TRANSCRIBE RESPONSE:', {
+              status: transcribeRes.status,
+              statusText: transcribeRes.statusText,
+            });
+
             if (!transcribeRes.ok) {
-              throw new Error(`Transcribe failed: ${transcribeRes.status}`);
+              const errorText = await transcribeRes.text();
+              console.error('❌ TRANSCRIBE ERROR RESPONSE:', errorText);
+              throw new Error(`Transcribe failed: ${transcribeRes.status} - ${errorText}`);
             }
 
-            const { text } = await transcribeRes.json();
-            console.log('Transcribed text:', text);
+            const transcribeData = await transcribeRes.json();
+            console.log('✅ TRANSCRIBE DATA RECEIVED:', transcribeData);
+
+            const { text } = transcribeData;
+            console.log('📝 EXTRACTED TEXT:', text);
+            addDebugLog(`📝 Transcript: "${text}"`);
 
             if (!text.trim()) {
+              addDebugLog('❌ No speech detected in audio');
               setState('error');
-              console.warn('No speech detected');
               return;
             }
 
             setTranscript(text);
 
             // ===== TRANSITION TO THINKING =====
+            addDebugLog('💭 Processing your message...');
             playFeedbackSound(523, 0.15); // C5 note
             speak('Let me think about that.');
             setState('thinking');
 
             // ===== GET AI RESPONSE =====
-            console.log('Calling conversation API with:', text);
+            addDebugLog(`🤖 Calling Claude with: "${text.substring(0, 50)}..."`);
+            console.log('🤖 SENDING TO CONVERSATION API:', { message: text });
+
             const conversationRes = await fetch('/api/conversation', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ message: text }),
             });
 
+            console.log('📥 CONVERSATION RESPONSE:', {
+              status: conversationRes.status,
+              statusText: conversationRes.statusText,
+            });
+
             if (!conversationRes.ok) {
+              const errorText = await conversationRes.text();
+              console.error('❌ CONVERSATION ERROR:', errorText);
               throw new Error(
-                `Conversation API failed: ${conversationRes.status}`
+                `Conversation API failed: ${conversationRes.status} - ${errorText}`
               );
             }
 
-            const { response: responseText } = await conversationRes.json();
-            console.log('AI response:', responseText);
+            const conversationData = await conversationRes.json();
+            console.log('✅ CONVERSATION DATA RECEIVED:', conversationData);
+
+            const { response: responseText, conversationId: newConvId } = conversationData;
+            console.log('🤖 CLAUDE RESPONSE:', responseText);
+            addDebugLog(`✅ Claude responded: "${responseText.substring(0, 50)}..."`);
+            addDebugLog('🔊 Speaking response...');
+
+            // Update conversation ID if this was a new conversation
+            if (!currentConversationId) {
+              setCurrentConversationId(newConvId);
+              setLastMessageTimestamp(new Date().toISOString());
+            }
 
             // ===== TRANSITION TO SPEAKING =====
             setState('speaking');
@@ -242,49 +531,119 @@ export default function VoiceInterface() {
             speak(responseText);
 
             // ===== RETURN TO IDLE =====
-            setTimeout(() => {
+            addDebugLog('✨ Conversation complete, returning to idle...');
+            setTimeout(async () => {
               playFeedbackSound(349, 0.2); // F4 note, completion sound
 
-              // Save conversation to shared state
-              addConversation({
-                timestamp: new Date().toISOString(),
-                userMessage: text,
-                assistantMessage: responseText,
-                context: coreMemory?.context,
-              });
-              console.log('Conversation saved to shared state');
+              // Reload conversation messages from Supabase
+              try {
+                const messagesRes = await fetch(
+                  `/api/conversations/${newConvId}/messages`,
+                  { headers: { 'Content-Type': 'application/json' } }
+                );
+
+                if (messagesRes.ok) {
+                  const messagesData = await messagesRes.json();
+                  setConversationHistory(messagesData.messages);
+                }
+              } catch (error) {
+                console.warn('Failed to reload messages:', error);
+              }
+
+              addDebugLog('💾 Conversation saved to Supabase');
 
               setState('idle');
               setTranscript('');
               setResponse('');
+              setDebugLog([]);
             }, 3500);
 
             // Clean up audio stream
             stream.getTracks().forEach((track) => track.stop());
           } catch (error) {
-            console.error('Error during transcription/conversation:', error);
+            addDebugLog(`⚠️  Error: ${(error as Error).message}`);
             setState('error');
             stream.getTracks().forEach((track) => track.stop());
           }
         };
 
-        // Start recording
+        // Start recording and timer
+        addDebugLog('▶️  Recording started. Listening for your voice...');
         mediaRecorder.start();
+
+        // Start audio level monitoring with automatic silence detection
+        const SILENCE_THRESHOLD = 5; // percent
+        const SILENCE_DURATION_INTERVALS = 15; // 15 * 100ms = 1500ms
+        let localSilenceCounter = 0;
+
+        const monitoringInterval = setInterval(() => {
+          if (analyserRef.current) {
+            const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+            analyserRef.current.getByteFrequencyData(dataArray);
+            const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+            const level = Math.min(100, (average / 255) * 100);
+            setAudioLevel(level);
+
+            // Silence detection (VAD - Voice Activity Detection)
+            if (level < SILENCE_THRESHOLD) {
+              localSilenceCounter++;
+
+              // Auto-stop recording if silent for sustained period
+              if (localSilenceCounter >= SILENCE_DURATION_INTERVALS) {
+                console.log('🔇 SILENCE DETECTED - Auto-stopping recording');
+                addDebugLog('🔇 Silence detected - auto-stopping');
+                if (mediaRecorderRef.current?.state === 'recording') {
+                  mediaRecorderRef.current.stop();
+                }
+                clearInterval(monitoringInterval);
+                if (recordingIntervalRef.current) {
+                  recordingIntervalRef.current = null;
+                }
+              }
+            } else {
+              // Voice detected, reset silence counter
+              if (localSilenceCounter > 0) {
+                localSilenceCounter = 0;
+                if (recordingTime > 0.5) {
+                  // Only log if we've been recording for a bit
+                  console.log('🔊 Voice detected');
+                }
+              }
+            }
+          }
+          setRecordingTime(t => t + 0.1);
+        }, 100);
+        recordingIntervalRef.current = monitoringInterval;
+        // Reset silence counter when starting new recording
+        setSilenceCounter(0);
       } catch (error) {
-        console.error('Error accessing microphone:', error);
+        addDebugLog(`⚠️  Microphone error: ${(error as Error).message}`);
         setState('error');
       }
     } else if (state === 'listening') {
       // ===== STOP RECORDING (Second Click) =====
-      if (mediaRecorderRef.current) {
+      console.log('🛑 STOP RECORDING TRIGGERED', {
+        mediaRecorderState: mediaRecorderRef.current?.state,
+        recordingIntervalExists: !!recordingIntervalRef.current,
+      });
+      addDebugLog('⏹️  Stopping recording...');
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        console.log('🛑 Calling mediaRecorder.stop()');
         mediaRecorderRef.current.stop();
+      } else {
+        console.warn('⚠️  MediaRecorder is not in recording state:', mediaRecorderRef.current?.state);
+      }
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
       }
     }
   };
 
   // Handle keyboard press (Space or Enter)
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    console.log('⌨️  KEYBOARD EVENT:', { code: e.code, state });
     if (e.code === 'Space' || e.code === 'Enter') {
+      console.log('⌨️  SPACE/ENTER DETECTED. Current state:', state);
       e.preventDefault();
       handlePress();
     }
@@ -333,34 +692,7 @@ export default function VoiceInterface() {
   };
 
   return (
-    <div className="voice-interface">
-      {/* Top navigation */}
-      <div className="top-nav">
-        <a href="/" className="nav-button">
-          <svg className="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-          </svg>
-          <span className="nav-label">Home</span>
-        </a>
-
-        {!showPrivacy && (
-          <button onClick={() => setShowPrivacy(true)} className="nav-button">
-            <svg className="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-            <span className="nav-label">My Data</span>
-          </button>
-        )}
-
-        {showPrivacy && (
-          <button onClick={() => setShowPrivacy(false)} className="nav-button">
-            <svg className="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-            <span className="nav-label">Close</span>
-          </button>
-        )}
-      </div>
+    <div className="voice-interface" onKeyDown={handleKeyDown} tabIndex={0}>
 
       {/* Privacy Dashboard */}
       {showPrivacy && (
@@ -492,45 +824,214 @@ export default function VoiceInterface() {
         </div>
       )}
 
-      {/* Idle state: Show circle button */}
-      {!showPrivacy && state === 'idle' && (
-        <div className="interaction-container">
-          {/* Welcome message */}
-          <div className="welcome-message">
-            <h1 className="welcome-title">Hi, I'm Memora</h1>
-            <p className="welcome-subtitle">I'm here to chat with you anytime</p>
+
+      {/* Chat History Panel - Always show (contains both welcome and chat states) */}
+      {!showPrivacy && (
+        <div className="chat-history-panel">
+          {/* Navigation Bar - Unified with Home/My Data */}
+          <div className="chat-nav-bar">
+            <div className="nav-left">
+              <a href="/" className="nav-link-button" title="Go home">
+                Home
+              </a>
+              <button
+                className="nav-link-button"
+                onClick={() => setShowPrivacy(true)}
+                title="View privacy settings"
+              >
+                My Data
+              </button>
+            </div>
+            <div className="nav-title">
+              {currentConversationId && allConversations.find(c => c.id === currentConversationId)?.title || 'New Chat'}
+            </div>
+            <div className="nav-right">
+              <button
+                className="nav-back-button"
+                onClick={() => setShowSessionList(!showSessionList)}
+                title="Back to sessions"
+              >
+                Back
+              </button>
+              <button
+                className="nav-new-button"
+                onClick={startNewConversation}
+                title="Start new conversation"
+              >
+                New Chat
+              </button>
+            </div>
           </div>
 
-          <button
-            className={`voice-trigger ${state}`}
-            onClick={handlePress}
-            onKeyDown={handleKeyDown}
-            aria-label={getInvitationText()}
-            tabIndex={0}
-          >
-            {/* Minimal border circle */}
-            <div className="circle-border"></div>
-
-            {/* Inner content */}
-            <div className="circle-inner">
-              <div className="circle-label">Speak</div>
+          {/* Session List Modal */}
+          {showSessionList && (
+            <div className="session-list-modal">
+              <div className="session-list-overlay" onClick={() => setShowSessionList(false)}></div>
+              <div className="session-list-content">
+                <div className="session-list-header">
+                  <h2>Your Conversations</h2>
+                  <button
+                    className="session-list-close"
+                    onClick={() => setShowSessionList(false)}
+                  >
+                    Close
+                  </button>
+                </div>
+                <div className="session-list">
+                  {allConversations.length === 0 ? (
+                    <p className="session-list-empty">No conversations yet</p>
+                  ) : (
+                    allConversations.map((conv) => (
+                      <div
+                        key={conv.id}
+                        className={`session-list-item ${currentConversationId === conv.id ? 'active' : ''}`}
+                        onClick={() => loadConversation(conv.id)}
+                      >
+                        <div className="session-info">
+                          <div className="session-title">{conv.title}</div>
+                          <div className="session-time">
+                            {new Date(conv.lastMessageAt).toLocaleString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: 'numeric',
+                              minute: '2-digit',
+                              hour12: true,
+                            })}
+                          </div>
+                        </div>
+                        <div className="session-count">{conv.messageCount} messages</div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
             </div>
-          </button>
+          )}
 
-          {/* Example prompts */}
-          <div className="example-prompts">
-            <p className="prompts-label">You can ask me:</p>
-            <div className="prompts-grid">
-              <div className="prompt-item">"Where am I?"</div>
-              <div className="prompt-item">"Who are my grandchildren?"</div>
-              <div className="prompt-item">"I'm feeling worried"</div>
-              <div className="prompt-item">"Did I take my medicine?"</div>
+          {/* Conversation History / Welcome State */}
+          <div className="chat-history-container" ref={chatHistoryContainerRef}>
+            {conversationHistory.length === 0 ? (
+              <div className="welcome-state">
+                <div className="welcome-message-large">
+                  <h2>Hi, I'm Memora</h2>
+                  <p>I'm here to chat with you anytime</p>
+                </div>
+                <div className="example-prompts-large">
+                  <p className="prompts-label-large">You can ask me:</p>
+                  <div className="prompts-grid-large">
+                    <div className="prompt-item-large">"Where am I?"</div>
+                    <div className="prompt-item-large">"Who are my grandchildren?"</div>
+                    <div className="prompt-item-large">"I'm feeling worried"</div>
+                    <div className="prompt-item-large">"Did I take my medicine?"</div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              conversationHistory.map((msg) => (
+                <div key={msg.id} className="conversation-entry">
+                  {msg.role === 'USER' ? (
+                    <div className="message-block user-message-block">
+                      <div className="message-header">
+                        <span className="message-sender">You</span>
+                        <span className="message-time">
+                          {new Date(msg.timestamp).toLocaleTimeString('en-US', {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: true,
+                          })}
+                        </span>
+                      </div>
+                      <div className="message-content">{msg.content}</div>
+                    </div>
+                  ) : (
+                    <div className="message-block assistant-message-block">
+                      <div className="message-header">
+                        <span className="message-sender">Memora</span>
+                      </div>
+                      <div className="message-content">{msg.content}</div>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Input Area - Text + Voice */}
+          <div className="chat-input-area">
+            <div className="input-controls">
+              {/* Mic button */}
+              <button
+                className={`input-mic-button state-${state}`}
+                onClick={handlePress}
+                onKeyDown={handleKeyDown}
+                disabled={state === 'thinking' || state === 'speaking'}
+                title={state === 'listening' ? 'Release or press space to stop' : 'Click to record'}
+              >
+                <svg
+                  className="mic-icon"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path d="M10 2a3 3 0 00-3 3v4a3 3 0 006 0V5a3 3 0 00-3-3z" />
+                  <path
+                    fillRule="evenodd"
+                    d="M4 10.5a1 1 0 00-1 1A6 6 0 0010 17a6 6 0 007-5.5 1 1 0 11-2 0 4 4 0 11-8 0 1 1 0 00-1-1z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </button>
+
+              {/* Text input */}
+              <input
+                type="text"
+                className="text-input"
+                placeholder="Type a message..."
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleTextSubmit();
+                  }
+                }}
+                disabled={state === 'thinking' || state === 'speaking' || state === 'listening'}
+              />
+
+              {/* Send button */}
+              <button
+                className="send-button"
+                onClick={handleTextSubmit}
+                disabled={
+                  !textInput.trim() ||
+                  state === 'thinking' ||
+                  state === 'speaking' ||
+                  state === 'listening'
+                }
+                title="Send message (Enter)"
+              >
+                <svg
+                  className="send-icon"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5.951-2.965L9 13h2l1.774 1.997 5.951 2.965a1 1 0 001.169-1.409l-7-14z" />
+                </svg>
+              </button>
             </div>
+
+            {/* Status indicator */}
+            {(state === 'listening' || state === 'thinking' || state === 'speaking') && (
+              <div className="input-status">
+                {state === 'listening' && '🎤 Recording...'}
+                {state === 'thinking' && '💭 Thinking...'}
+                {state === 'speaking' && '🔊 Speaking...'}
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* Active state: Show chat interface */}
+      {/* Active state: Show chat interface (keeping for compatibility, but using history panel) */}
       {!showPrivacy && state !== 'idle' && (
         <div className="chat-interface">
           <div className="chat-messages">
@@ -565,6 +1066,77 @@ export default function VoiceInterface() {
 
           {/* Status text */}
           <div className="chat-status">{getInvitationText()}</div>
+        </div>
+      )}
+
+      {/* Debug Panel - Visual proof of what's happening */}
+      {state !== 'idle' && !showPrivacy && (
+        <div className="debug-panel">
+          {/* Current State */}
+          <div className="debug-section">
+            <div className="debug-label">State</div>
+            <div className="debug-state">
+              <span className={`state-badge state-${state}`}>
+                {state === 'listening' && '🎤'}
+                {state === 'thinking' && '💭'}
+                {state === 'speaking' && '🔊'}
+                {state === 'error' && '❌'}
+                {' '}{state.charAt(0).toUpperCase() + state.slice(1)}
+              </span>
+            </div>
+          </div>
+
+          {/* Audio Level Meter - PROOF mic is hearing audio */}
+          {state === 'listening' && (
+            <div className="debug-section">
+              <div className="debug-label">Audio Level</div>
+              <div className="audio-meter-container">
+                <div className="audio-meter">
+                  <div
+                    className="audio-meter-bar"
+                    style={{ width: `${audioLevel}%` }}
+                  ></div>
+                </div>
+                <div className="audio-level-value">{Math.round(audioLevel)}%</div>
+              </div>
+            </div>
+          )}
+
+          {/* Recording Timer */}
+          {state === 'listening' && (
+            <div className="debug-section">
+              <div className="debug-label">Recording Time</div>
+              <div className="debug-value">{recordingTime.toFixed(1)}s</div>
+            </div>
+          )}
+
+          {/* API Status / Current Operation */}
+          <div className="debug-section">
+            <div className="debug-label">Current Operation</div>
+            <div className="debug-value">{apiStatus}</div>
+          </div>
+
+          {/* Debug Log - Last 10 messages showing exact steps */}
+          {debugLog.length > 0 && (
+            <div className="debug-section debug-log-section">
+              <div className="debug-label">Processing Steps</div>
+              <div className="debug-log">
+                {debugLog.map((log, idx) => (
+                  <div key={idx} className="debug-log-entry">
+                    {log}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Error Display */}
+          {state === 'error' && (
+            <div className="debug-section error-section">
+              <div className="debug-label">Error Details</div>
+              <div className="error-message">{apiStatus}</div>
+            </div>
+          )}
         </div>
       )}
 
@@ -1176,25 +1748,26 @@ export default function VoiceInterface() {
           line-height: 1.6;
         }
 
-        /* Ambient context display - monospace like landing page UI */
+        /* Ambient context display - bottom right corner */
         .ambient-context {
           position: fixed;
-          top: 2rem;
+          bottom: 1rem;
           right: 2rem;
           display: flex;
           flex-direction: column;
           align-items: flex-end;
           gap: 0.375rem;
-          font-family: 'Inconsolata', monospace;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
           font-size: 0.875rem;
           color: rgba(250, 250, 246, 0.5);
           text-align: right;
-          z-index: 100;
+          z-index: 5;
           letter-spacing: 0.05em;
         }
 
         .context-day {
-          font-weight: 600;
+          font-family: 'Space Grotesk', sans-serif;
+          font-weight: 700;
           font-size: 0.7rem;
           text-transform: uppercase;
           letter-spacing: 0.15em;
@@ -1203,21 +1776,24 @@ export default function VoiceInterface() {
         }
 
         .context-date {
-          font-weight: 400;
+          font-family: 'Space Grotesk', sans-serif;
+          font-weight: 500;
           font-size: 0.875rem;
           color: rgba(250, 250, 246, 0.6);
         }
 
         .context-time {
-          font-weight: 300;
+          font-family: 'Space Grotesk', sans-serif;
+          font-weight: 700;
           font-size: 1.5rem;
           color: rgba(212, 165, 116, 0.8);
           margin-top: 0.25rem;
-          letter-spacing: 0.05em;
+          letter-spacing: -0.01em;
         }
 
         .context-weather {
-          font-weight: 400;
+          font-family: 'Space Grotesk', sans-serif;
+          font-weight: 600;
           font-size: 0.7rem;
           margin-top: 0.5rem;
           padding-top: 0.5rem;
@@ -1225,6 +1801,202 @@ export default function VoiceInterface() {
           opacity: 0.5;
           text-transform: uppercase;
           letter-spacing: 0.1em;
+        }
+
+        /* Debug Panel - Detailed visual feedback */
+        .debug-panel {
+          position: fixed;
+          bottom: 2rem;
+          left: 2rem;
+          z-index: 50;
+          background: rgba(10, 10, 10, 0.95);
+          border: 1px solid rgba(212, 165, 116, 0.4);
+          border-radius: 8px;
+          padding: 1.5rem;
+          max-width: 380px;
+          width: calc(100% - 4rem);
+          backdrop-filter: blur(10px);
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .debug-section {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+          margin-bottom: 1rem;
+          padding-bottom: 1rem;
+          border-bottom: 1px solid rgba(212, 165, 116, 0.2);
+        }
+
+        .debug-section:last-child {
+          margin-bottom: 0;
+          padding-bottom: 0;
+          border-bottom: none;
+        }
+
+        .debug-log-section {
+          border-bottom: 1px solid rgba(212, 165, 116, 0.2);
+        }
+
+        .debug-label {
+          font-family: 'Inconsolata', monospace;
+          font-size: 0.7rem;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.15em;
+          color: rgba(212, 165, 116, 0.7);
+        }
+
+        .debug-value {
+          font-family: 'Inconsolata', monospace;
+          font-size: 0.9rem;
+          font-weight: 400;
+          color: rgba(250, 250, 246, 0.9);
+          letter-spacing: 0.05em;
+        }
+
+        /* State Badge */
+        .debug-state {
+          display: flex;
+          gap: 0.5rem;
+        }
+
+        .state-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-family: 'Inconsolata', monospace;
+          font-size: 0.85rem;
+          font-weight: 600;
+          padding: 0.5rem 1rem;
+          border-radius: 4px;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+        }
+
+        .state-badge.state-listening {
+          background: rgba(76, 175, 80, 0.15);
+          color: #4CAF50;
+          border: 1px solid rgba(76, 175, 80, 0.4);
+          animation: pulse-green 2s ease-in-out infinite;
+        }
+
+        .state-badge.state-thinking {
+          background: rgba(212, 165, 116, 0.15);
+          color: rgba(212, 165, 116, 1);
+          border: 1px solid rgba(212, 165, 116, 0.4);
+        }
+
+        .state-badge.state-speaking {
+          background: rgba(255, 193, 7, 0.15);
+          color: #FFC107;
+          border: 1px solid rgba(255, 193, 7, 0.4);
+          animation: pulse-yellow 2s ease-in-out infinite;
+        }
+
+        .state-badge.state-error {
+          background: rgba(244, 67, 54, 0.15);
+          color: #F44336;
+          border: 1px solid rgba(244, 67, 54, 0.4);
+          animation: pulse-red 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-green {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.7; }
+        }
+
+        @keyframes pulse-yellow {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.7; }
+        }
+
+        @keyframes pulse-red {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.7; }
+        }
+
+        /* Audio Meter */
+        .audio-meter-container {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+        }
+
+        .audio-meter {
+          flex: 1;
+          height: 28px;
+          background: rgba(250, 250, 246, 0.08);
+          border: 1px solid rgba(212, 165, 116, 0.3);
+          border-radius: 4px;
+          overflow: hidden;
+          position: relative;
+        }
+
+        .audio-meter-bar {
+          height: 100%;
+          background: linear-gradient(90deg,
+            rgba(76, 175, 80, 0.6) 0%,
+            rgba(76, 175, 80, 1) 50%,
+            rgba(255, 193, 7, 0.8) 100%
+          );
+          transition: width 0.05s ease-out;
+          border-radius: 2px;
+          box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+        }
+
+        .audio-level-value {
+          font-family: 'Inconsolata', monospace;
+          font-size: 0.85rem;
+          font-weight: 600;
+          color: rgba(212, 165, 116, 0.9);
+          min-width: 40px;
+          text-align: right;
+        }
+
+        /* Debug Log */
+        .debug-log {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+          max-height: 200px;
+          overflow-y: auto;
+          padding: 0.75rem;
+          background: rgba(0, 0, 0, 0.3);
+          border: 1px solid rgba(212, 165, 116, 0.2);
+          border-radius: 4px;
+        }
+
+        .debug-log-entry {
+          font-family: 'Inconsolata', monospace;
+          font-size: 0.75rem;
+          color: rgba(250, 250, 246, 0.8);
+          line-height: 1.4;
+          padding: 0.25rem 0;
+          letter-spacing: 0.02em;
+          border-left: 2px solid rgba(212, 165, 116, 0.3);
+          padding-left: 0.5rem;
+        }
+
+        /* Error Section */
+        .error-section {
+          background: rgba(244, 67, 54, 0.08);
+          border: 1px solid rgba(244, 67, 54, 0.3);
+          border-radius: 4px;
+          padding: 1rem;
+          margin: 0;
+          border-bottom: none;
+        }
+
+        .error-message {
+          font-family: 'Inconsolata', monospace;
+          font-size: 0.85rem;
+          color: #FF7043;
+          background: rgba(244, 67, 54, 0.05);
+          padding: 0.75rem;
+          border-radius: 3px;
+          border-left: 3px solid #F44336;
+          line-height: 1.5;
         }
 
         /* Responsive */
@@ -1253,6 +2025,18 @@ export default function VoiceInterface() {
 
           .nav-button {
             padding: 0.5rem 0.875rem;
+          }
+
+          .debug-panel {
+            max-width: 320px;
+            padding: 1rem;
+            bottom: 1rem;
+            left: 1rem;
+          }
+
+          .debug-log {
+            max-height: 120px;
+            font-size: 0.7rem;
           }
         }
 
@@ -1286,6 +2070,546 @@ export default function VoiceInterface() {
         .voice-trigger:focus-visible {
           outline: 3px solid rgba(212, 165, 116, 0.8);
           outline-offset: 8px;
+        }
+
+        /* Chat History Panel - New unified chat UI */
+        .chat-history-panel {
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          display: flex;
+          flex-direction: column;
+          height: 100vh;
+          z-index: 20;
+          background: linear-gradient(180deg, rgba(10, 10, 10, 0.8) 0%, rgba(10, 10, 10, 0.95) 100%);
+          backdrop-filter: blur(10px);
+        }
+
+        /* Conversation History Container */
+        .chat-history-container {
+          flex: 1;
+          overflow-y: auto;
+          padding: 2rem;
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
+          max-width: 900px;
+          margin: 0 auto;
+          width: 100%;
+        }
+
+        .chat-empty-state {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          height: 100%;
+          color: rgba(250, 250, 246, 0.4);
+          font-family: 'Literata', Georgia, serif;
+          font-size: 1.1rem;
+        }
+
+        /* Conversation Entry */
+        .conversation-entry {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+          animation: slideInUp 0.3s ease-out;
+        }
+
+        @keyframes slideInUp {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        /* Message Block */
+        .message-block {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+          max-width: 70%;
+        }
+
+        .user-message-block {
+          align-self: flex-end;
+          align-items: flex-end;
+        }
+
+        .assistant-message-block {
+          align-self: flex-start;
+          align-items: flex-start;
+        }
+
+        /* Message Header */
+        .message-header {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          font-family: 'Inconsolata', monospace;
+          font-size: 0.75rem;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+        }
+
+        .message-sender {
+          color: rgba(212, 165, 116, 0.8);
+          font-weight: 600;
+        }
+
+        .message-time {
+          color: rgba(250, 250, 246, 0.4);
+          font-weight: 400;
+        }
+
+        /* Message Content */
+        .message-content {
+          font-family: 'Literata', Georgia, serif;
+          font-size: 1rem;
+          line-height: 1.6;
+          color: rgba(250, 250, 246, 0.9);
+          padding: 1rem;
+          border-radius: 4px;
+          word-wrap: break-word;
+        }
+
+        .user-message-block .message-content {
+          background: rgba(212, 165, 116, 0.15);
+          border: 1px solid rgba(212, 165, 116, 0.3);
+        }
+
+        .assistant-message-block .message-content {
+          background: rgba(250, 250, 246, 0.05);
+          border: 1px solid rgba(250, 250, 246, 0.1);
+        }
+
+        /* Chat Input Area */
+        .chat-input-area {
+          border-top: 1px solid rgba(212, 165, 116, 0.2);
+          padding: 1rem;
+          background: rgba(10, 10, 10, 0.95);
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+          align-items: center;
+        }
+
+        /* Input Controls */
+        .input-controls {
+          display: flex;
+          gap: 0.75rem;
+          width: 100%;
+          max-width: 600px;
+          align-items: center;
+        }
+
+        /* Mic Button */
+        .input-mic-button {
+          flex-shrink: 0;
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          border: 2px solid rgba(212, 165, 116, 0.4);
+          background: transparent;
+          color: rgba(212, 165, 116, 0.7);
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.3s ease;
+          padding: 0;
+        }
+
+        .input-mic-button:hover:not(:disabled) {
+          border-color: rgba(212, 165, 116, 0.8);
+          color: rgba(212, 165, 116, 1);
+          background: rgba(212, 165, 116, 0.1);
+        }
+
+        .input-mic-button.state-listening {
+          border-color: #4CAF50;
+          color: #4CAF50;
+          background: rgba(76, 175, 80, 0.15);
+          animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+          0%, 100% {
+            box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.4);
+          }
+          50% {
+            box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
+          }
+        }
+
+        .input-mic-button:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .mic-icon {
+          width: 20px;
+          height: 20px;
+        }
+
+        /* Text Input */
+        .text-input {
+          flex: 1;
+          padding: 0.75rem 1rem;
+          border: 1px solid rgba(212, 165, 116, 0.3);
+          border-radius: 4px;
+          background: rgba(250, 250, 246, 0.05);
+          color: rgba(250, 250, 246, 0.9);
+          font-family: 'Literata', Georgia, serif;
+          font-size: 0.95rem;
+          transition: all 0.2s ease;
+          outline: none;
+        }
+
+        .text-input:focus {
+          border-color: rgba(212, 165, 116, 0.6);
+          background: rgba(250, 250, 246, 0.08);
+        }
+
+        .text-input::placeholder {
+          color: rgba(250, 250, 246, 0.4);
+        }
+
+        .text-input:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        /* Send Button */
+        .send-button {
+          flex-shrink: 0;
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          border: 2px solid rgba(212, 165, 116, 0.4);
+          background: transparent;
+          color: rgba(212, 165, 116, 0.7);
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.3s ease;
+          padding: 0;
+        }
+
+        .send-button:hover:not(:disabled) {
+          border-color: rgba(212, 165, 116, 0.8);
+          color: rgba(212, 165, 116, 1);
+          background: rgba(212, 165, 116, 0.15);
+          transform: scale(1.05);
+        }
+
+        .send-button:disabled {
+          opacity: 0.3;
+          cursor: not-allowed;
+        }
+
+        .send-icon {
+          width: 20px;
+          height: 20px;
+        }
+
+        /* Input Status */
+        .input-status {
+          font-family: 'Inconsolata', monospace;
+          font-size: 0.75rem;
+          color: rgba(212, 165, 116, 0.6);
+          text-align: center;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+          animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        /* Chat History Scrollbar */
+        .chat-history-container::-webkit-scrollbar {
+          width: 8px;
+        }
+
+        .chat-history-container::-webkit-scrollbar-track {
+          background: rgba(212, 165, 116, 0.1);
+        }
+
+        .chat-history-container::-webkit-scrollbar-thumb {
+          background: rgba(212, 165, 116, 0.3);
+          border-radius: 4px;
+        }
+
+        .chat-history-container::-webkit-scrollbar-thumb:hover {
+          background: rgba(212, 165, 116, 0.5);
+        }
+
+        /* Navigation Bar */
+        .chat-nav-bar {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0.75rem 1rem;
+          background: rgba(212, 165, 116, 0.1);
+          border-bottom: 1px solid rgba(212, 165, 116, 0.2);
+          min-height: 50px;
+          gap: 1rem;
+        }
+
+        .nav-left,
+        .nav-right {
+          display: flex;
+          gap: 0.5rem;
+          align-items: center;
+        }
+
+        .nav-link-button,
+        .nav-back-button,
+        .nav-new-button {
+          background: transparent;
+          color: #fafaf6;
+          border: 1px solid rgba(212, 165, 116, 0.3);
+          padding: 0.5rem 1rem;
+          border-radius: 4px;
+          font-family: 'Space Grotesk', sans-serif;
+          font-size: 0.875rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          text-decoration: none;
+        }
+
+        .nav-link-button:hover,
+        .nav-back-button:hover,
+        .nav-new-button:hover {
+          background: rgba(212, 165, 116, 0.15);
+          border-color: rgba(212, 165, 116, 0.5);
+        }
+
+        .nav-title {
+          font-family: 'Space Grotesk', sans-serif;
+          font-size: 0.95rem;
+          font-weight: 600;
+          color: #fafaf6;
+          flex: 1;
+          text-align: center;
+          padding: 0 1rem;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          min-width: 150px;
+        }
+
+        /* Welcome State */
+        .welcome-state {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 3rem 2rem;
+          text-align: center;
+          height: 100%;
+        }
+
+        .welcome-message-large {
+          margin-bottom: 3rem;
+        }
+
+        .welcome-message-large h2 {
+          font-family: 'Space Grotesk', sans-serif;
+          font-size: 2.5rem;
+          font-weight: 700;
+          color: #fafaf6;
+          margin: 0 0 1rem 0;
+          letter-spacing: -0.01em;
+        }
+
+        .welcome-message-large p {
+          font-family: 'Space Grotesk', sans-serif;
+          font-size: 1.1rem;
+          font-weight: 400;
+          color: rgba(250, 250, 246, 0.6);
+          margin: 0;
+          letter-spacing: -0.01em;
+        }
+
+        .example-prompts-large {
+          width: 100%;
+        }
+
+        .prompts-label-large {
+          font-family: 'Space Grotesk', sans-serif;
+          font-size: 0.75rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          color: rgba(250, 250, 246, 0.5);
+          margin-bottom: 1.5rem;
+          letter-spacing: 0.1em;
+        }
+
+        .prompts-grid-large {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 1rem;
+          max-width: 600px;
+          margin: 0 auto;
+        }
+
+        .prompt-item-large {
+          padding: 1.5rem;
+          background: rgba(212, 165, 116, 0.1);
+          border: 1px solid rgba(212, 165, 116, 0.2);
+          border-radius: 6px;
+          color: #fafaf6;
+          font-family: 'Space Grotesk', sans-serif;
+          font-size: 0.95rem;
+          font-weight: 500;
+          cursor: default;
+          transition: all 0.2s ease;
+        }
+
+        .prompt-item-large:hover {
+          background: rgba(212, 165, 116, 0.15);
+          border-color: rgba(212, 165, 116, 0.4);
+        }
+
+        /* Session List Modal */
+        .session-list-modal {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          z-index: 1000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .session-list-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.7);
+          backdrop-filter: blur(4px);
+        }
+
+        .session-list-content {
+          position: relative;
+          z-index: 1001;
+          background: #1a1a1a;
+          border: 1px solid rgba(212, 165, 116, 0.2);
+          border-radius: 8px;
+          width: 90%;
+          max-width: 500px;
+          max-height: 80vh;
+          display: flex;
+          flex-direction: column;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+        }
+
+        .session-list-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 1.5rem;
+          border-bottom: 1px solid rgba(212, 165, 116, 0.2);
+        }
+
+        .session-list-header h2 {
+          margin: 0;
+          font-size: 1.25rem;
+          color: #fafaf6;
+        }
+
+        .session-list-close {
+          background: transparent;
+          color: #fafaf6;
+          border: 1px solid rgba(212, 165, 116, 0.3);
+          padding: 0.5rem 1rem;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 0.875rem;
+          transition: all 0.2s ease;
+        }
+
+        .session-list-close:hover {
+          background: rgba(212, 165, 116, 0.15);
+          border-color: rgba(212, 165, 116, 0.5);
+        }
+
+        .session-list {
+          flex: 1;
+          overflow-y: auto;
+          padding: 0;
+        }
+
+        .session-list-empty {
+          text-align: center;
+          color: rgba(250, 250, 246, 0.5);
+          padding: 2rem 1rem;
+          margin: 0;
+        }
+
+        .session-list-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 1rem 1.5rem;
+          border-bottom: 1px solid rgba(212, 165, 116, 0.1);
+          cursor: pointer;
+          transition: background 0.2s ease;
+        }
+
+        .session-list-item:hover {
+          background: rgba(212, 165, 116, 0.08);
+        }
+
+        .session-list-item.active {
+          background: rgba(212, 165, 116, 0.15);
+          border-left: 3px solid rgba(212, 165, 116, 0.5);
+          padding-left: calc(1.5rem - 3px);
+        }
+
+        .session-info {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .session-title {
+          color: #fafaf6;
+          font-weight: 500;
+          margin-bottom: 0.25rem;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .session-time {
+          color: rgba(250, 250, 246, 0.5);
+          font-size: 0.75rem;
+        }
+
+        .session-count {
+          color: rgba(250, 250, 246, 0.5);
+          font-size: 0.875rem;
+          margin-left: 1rem;
+          white-space: nowrap;
         }
       `}</style>
     </div>
