@@ -10,7 +10,15 @@ const nextConfig = {
         hostname: "**"
       }
     ]
-  }
+  },
+  async rewrites() {
+    return [
+      {
+        source: '/',
+        destination: '/memora-cinematic.html',
+      },
+    ];
+  },
 };
 
 export default nextConfig;
