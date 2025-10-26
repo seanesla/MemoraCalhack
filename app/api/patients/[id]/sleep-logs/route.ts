@@ -9,6 +9,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { verifyPatientAccess } from '@/lib/auth-helpers';
 
 // Validation schema for creating/updating sleep log
 const sleepLogSchema = z.object({
@@ -41,15 +42,13 @@ export async function GET(
 
     const { id: patientId } = await context.params;
 
-    // Verify patient exists
-    const patient = await prisma.patient.findUnique({
-      where: { id: patientId },
-    });
+    // Verify patient access
+    const access = await verifyPatientAccess(userId, patientId);
 
-    if (!patient) {
+    if (!access.authorized) {
       return NextResponse.json(
-        { error: 'Patient not found' },
-        { status: 404 }
+        { error: access.reason || 'Access denied' },
+        { status: access.patient ? 403 : 404 }
       );
     }
 
@@ -95,15 +94,13 @@ export async function POST(
 
     const { id: patientId } = await context.params;
 
-    // Verify patient exists
-    const patient = await prisma.patient.findUnique({
-      where: { id: patientId },
-    });
+    // Verify patient access
+    const access = await verifyPatientAccess(userId, patientId);
 
-    if (!patient) {
+    if (!access.authorized) {
       return NextResponse.json(
-        { error: 'Patient not found' },
-        { status: 404 }
+        { error: access.reason || 'Access denied' },
+        { status: access.patient ? 403 : 404 }
       );
     }
 

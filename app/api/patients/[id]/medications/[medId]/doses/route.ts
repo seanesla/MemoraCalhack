@@ -11,6 +11,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { verifyPatientAccess } from '@/lib/auth-helpers';
 
 // Validation schema for recording a dose
 const recordDoseSchema = z.object({
@@ -46,6 +47,16 @@ export async function POST(
     }
 
     const { id: patientId, medId: medicationId } = await context.params;
+
+    // Verify patient access
+    const access = await verifyPatientAccess(userId, patientId);
+
+    if (!access.authorized) {
+      return NextResponse.json(
+        { error: access.reason || 'Access denied' },
+        { status: access.patient ? 403 : 404 }
+      );
+    }
 
     // Verify medication exists and belongs to patient
     const medication = await prisma.medication.findFirst({

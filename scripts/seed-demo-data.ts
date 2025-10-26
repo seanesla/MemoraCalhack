@@ -10,6 +10,8 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 const DEMO_PATIENT_ID = 'cmh6xjz9q00008omek5epf02t';
+const DEMO_PATIENT_CLERK_ID = 'clerk_demo_patient_global';
+const DEMO_CAREGIVER_CLERK_ID = 'clerk_demo_caregiver_global';
 
 async function seedDemoData() {
   console.log('Seeding demo data for patient:', DEMO_PATIENT_ID);
@@ -25,6 +27,49 @@ async function seedDemoData() {
   }
 
   console.log('Found patient:', patient.name);
+
+  // ===== CAREGIVER-PATIENT RELATIONSHIP =====
+  console.log('\nSetting up caregiver-patient relationship...');
+
+  // Find or create demo caregiver
+  let caregiver = await prisma.caregiver.findUnique({
+    where: { clerkId: DEMO_CAREGIVER_CLERK_ID },
+  });
+
+  if (!caregiver) {
+    caregiver = await prisma.caregiver.create({
+      data: {
+        clerkId: DEMO_CAREGIVER_CLERK_ID,
+        name: 'Demo Caregiver',
+        email: 'demo-caregiver@memora.care',
+      },
+    });
+    console.log('Created demo caregiver:', caregiver.name);
+  } else {
+    console.log('Found existing demo caregiver:', caregiver.name);
+  }
+
+  // Create caregiver-patient relationship if it doesn't exist
+  const existingRelationship = await prisma.caregiverPatient.findUnique({
+    where: {
+      caregiverId_patientId: {
+        caregiverId: caregiver.id,
+        patientId: patient.id,
+      },
+    },
+  });
+
+  if (!existingRelationship) {
+    await prisma.caregiverPatient.create({
+      data: {
+        caregiverId: caregiver.id,
+        patientId: patient.id,
+      },
+    });
+    console.log('✓ Created caregiver-patient relationship');
+  } else {
+    console.log('✓ Caregiver-patient relationship already exists');
+  }
 
   // ===== MEDICATIONS =====
   console.log('\nCreating medications...');

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@clerk/nextjs/server';
+import { verifyPatientAccess } from '@/lib/auth-helpers';
 
 export async function GET(
   request: Request,
@@ -18,32 +19,14 @@ export async function GET(
 
     const patientId = (await params).id;
 
-    // Verify patient exists and user has access
-    const patient = await prisma.patient.findUnique({
-      where: { id: patientId },
-    });
+    // Verify patient access
+    const access = await verifyPatientAccess(userId, patientId);
 
-    if (!patient) {
+    if (!access.authorized) {
       return NextResponse.json(
-        { error: 'Patient not found' },
-        { status: 404 }
+        { error: access.reason || 'Access denied' },
+        { status: access.patient ? 403 : 404 }
       );
-    }
-
-    // For demo mode, allow access to demo patient
-    // Otherwise verify user is the patient or a caregiver
-    const isDemoPatient = patient.clerkId === 'clerk_demo_patient_global';
-    if (!isDemoPatient && userId !== patient.clerkId) {
-      // Check if user is a caregiver
-      const caregiver = await prisma.caregiver.findUnique({
-        where: { clerkId: userId },
-      });
-      if (!caregiver) {
-        return NextResponse.json(
-          { error: 'Access denied' },
-          { status: 403 }
-        );
-      }
     }
 
     // Get today's date (start of day)
