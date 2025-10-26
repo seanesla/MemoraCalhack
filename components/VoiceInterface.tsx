@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@clerk/nextjs';
+import { createClient, LiveTranscriptionEvents } from '@deepgram/sdk';
+import type { LiveClient } from '@deepgram/sdk';
 
 type VoiceState = 'idle' | 'listening' | 'thinking' | 'speaking' | 'error';
 
@@ -77,6 +79,12 @@ export default function VoiceInterface() {
   const [silenceCounter, setSilenceCounter] = useState(0);
   const chatHistoryContainerRef = useRef<HTMLDivElement | null>(null);
 
+  // Deepgram real-time transcription state
+  const [deepgramToken, setDeepgramToken] = useState<string | null>(null);
+  const deepgramConnectionRef = useRef<LiveClient | null>(null);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const liveTranscriptRef = useRef<string>(''); // Store live transcript for callback access
+
   // Debug helper function
   const addDebugLog = (message: string) => {
     console.log('[DEBUG]', message);
@@ -128,6 +136,26 @@ export default function VoiceInterface() {
 
     initializeConversations();
   }, [userId]);
+
+  // Fetch Deepgram token on mount for real-time transcription
+  useEffect(() => {
+    const fetchDeepgramToken = async () => {
+      try {
+        const response = await fetch('/api/audio/token');
+        if (response.ok) {
+          const data = await response.json();
+          setDeepgramToken(data.token);
+          console.log('Deepgram token fetched successfully');
+        } else {
+          console.error('Failed to fetch Deepgram token:', response.status);
+        }
+      } catch (error) {
+        console.error('Error fetching Deepgram token:', error);
+      }
+    };
+
+    fetchDeepgramToken();
+  }, []);
 
   // Auto-scroll chat history to bottom when new messages arrive
   useEffect(() => {
@@ -356,6 +384,70 @@ export default function VoiceInterface() {
     setShowSessionList(false);
   };
 
+  // Initialize Deepgram live transcription connection
+  // Returns a Promise that resolves when the WebSocket connection opens
+  const initializeDeepgramConnection = (): Promise<LiveClient> => {
+    return new Promise((resolve, reject) => {
+      if (!deepgramToken) {
+        console.error('Cannot initialize Deepgram: token not available');
+        reject(new Error('Deepgram token not available'));
+        return;
+      }
+
+      try {
+        // CRITICAL: Use accessToken option for JWT tokens (not raw string)
+        const deepgram = createClient({ accessToken: deepgramToken });
+        const connection = deepgram.listen.live({
+          model: 'nova-2',
+          language: 'en-US',
+          smart_format: true,
+          interim_results: true,
+        });
+
+        connection.on(LiveTranscriptionEvents.Open, () => {
+          console.log('Deepgram WebSocket connection opened');
+          setIsTranscribing(true);
+          resolve(connection); // Resolve promise when connection opens
+        });
+
+        connection.on(LiveTranscriptionEvents.Transcript, (data: any) => {
+          const transcript = data.channel?.alternatives?.[0]?.transcript || '';
+          const isFinal = data.is_final;
+
+          if (transcript) {
+            console.log('Transcript received:', { transcript, isFinal });
+
+            if (isFinal) {
+              // Final transcript - append to accumulated text
+              const newText = liveTranscriptRef.current + ' ' + transcript;
+              liveTranscriptRef.current = newText.trim();
+              setTextInput(newText.trim());
+              console.log('Final transcript accumulated:', liveTranscriptRef.current);
+            } else {
+              // Interim transcript - show in real-time but don't store yet
+              const previewText = liveTranscriptRef.current + ' ' + transcript;
+              setTextInput(previewText.trim());
+            }
+          }
+        });
+
+        connection.on(LiveTranscriptionEvents.Error, (error: any) => {
+          console.error('Deepgram error:', error);
+          setIsTranscribing(false);
+          reject(error);
+        });
+
+        connection.on(LiveTranscriptionEvents.Close, () => {
+          console.log('Deepgram connection closed');
+          setIsTranscribing(false);
+        });
+      } catch (error) {
+        console.error('Error initializing Deepgram:', error);
+        reject(error);
+      }
+    });
+  };
+
   const handlePress = async () => {
     if (state === 'idle') {
       // ===== START RECORDING (First Click) =====
@@ -372,6 +464,14 @@ export default function VoiceInterface() {
         speak("I'm listening. Take your time.");
         setState('listening');
         setRecordingTime(0);
+        setTextInput(''); // Clear previous transcript for new recording
+        liveTranscriptRef.current = ''; // Clear ref for new recording
+
+        // Initialize Deepgram WebSocket and wait for connection to open
+        addDebugLog('🔌 Connecting to Deepgram WebSocket...');
+        const connection = await initializeDeepgramConnection();
+        deepgramConnectionRef.current = connection;
+        addDebugLog('✅ Deepgram WebSocket ready for streaming');
 
         // Request microphone access
         addDebugLog('📍 Requesting microphone permission...');
@@ -385,7 +485,6 @@ export default function VoiceInterface() {
 
         addDebugLog('✅ Microphone access granted');
         audioStreamRef.current = stream;
-        audioChunksRef.current = [];
 
         // Set up audio level monitoring
         const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -395,14 +494,6 @@ export default function VoiceInterface() {
         source.connect(analyser);
         analyserRef.current = analyser;
 
-        // Start monitoring audio levels
-        const monitorAudio = () => {
-          const dataArray = new Uint8Array(analyser.frequencyBinCount);
-          analyser.getByteFrequencyData(dataArray);
-          const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
-          setAudioLevel(Math.min(100, (average / 255) * 100));
-        };
-
         // Create MediaRecorder
         addDebugLog('🎙️ Creating MediaRecorder...');
         const mediaRecorder = new MediaRecorder(stream, {
@@ -411,76 +502,43 @@ export default function VoiceInterface() {
 
         mediaRecorderRef.current = mediaRecorder;
 
-        // Collect audio chunks
+        // Stream audio chunks to Deepgram WebSocket in real-time (no batch storage)
         mediaRecorder.ondataavailable = (event) => {
-          if (event.data.size > 0) {
-            audioChunksRef.current.push(event.data);
-            addDebugLog(`📦 Audio chunk received: ${(event.data.size / 1024).toFixed(1)}KB`);
+          if (event.data.size > 0 && deepgramConnectionRef.current) {
+            deepgramConnectionRef.current.send(event.data);
+            addDebugLog(`📡 Streaming audio chunk: ${(event.data.size / 1024).toFixed(1)}KB`);
           }
         };
 
-        // Handle recording stop
+        // Handle recording stop - use real-time transcript from textInput state
         mediaRecorder.onstop = async () => {
-          console.log('🛑 ONSTOP CALLBACK TRIGGERED');
+          console.log('🛑 Recording stopped');
           try {
             // Stop monitoring audio
             if (recordingIntervalRef.current) {
               clearInterval(recordingIntervalRef.current);
             }
 
-            // ===== TRANSCRIBE AUDIO =====
-            console.log('🛑 RECORDING STOPPED. Audio chunks collected:', audioChunksRef.current.length);
-            addDebugLog('⏹️  Recording stopped. Preparing audio blob...');
-            const audioBlob = new Blob(audioChunksRef.current, {
-              type: 'audio/webm',
-            });
-            console.log('📊 AUDIO BLOB CREATED:', {
-              size: audioBlob.size,
-              type: audioBlob.type,
-              chunks: audioChunksRef.current.length,
-            });
-            addDebugLog(`📊 Total audio blob size: ${(audioBlob.size / 1024).toFixed(1)}KB`);
-
-            const formData = new FormData();
-            formData.append('audio', audioBlob);
-
-            addDebugLog('🔄 Sending to Deepgram STT endpoint...');
-            console.log('📤 SENDING TO TRANSCRIBE:', {
-              blobSize: audioBlob.size,
-              blobType: audioBlob.type,
-              formDataEntries: Array.from(formData.entries()).map(([k, v]) => `${k}: ${v instanceof Blob ? `Blob(${v.size}bytes, ${v.type})` : v}`),
-            });
-
-            const transcribeRes = await fetch('/api/audio/transcribe', {
-              method: 'POST',
-              body: formData,
-            });
-
-            console.log('📥 TRANSCRIBE RESPONSE:', {
-              status: transcribeRes.status,
-              statusText: transcribeRes.statusText,
-            });
-
-            if (!transcribeRes.ok) {
-              const errorText = await transcribeRes.text();
-              console.error('❌ TRANSCRIBE ERROR RESPONSE:', errorText);
-              throw new Error(`Transcribe failed: ${transcribeRes.status} - ${errorText}`);
+            // Close Deepgram WebSocket connection
+            if (deepgramConnectionRef.current) {
+              deepgramConnectionRef.current.finish();
+              addDebugLog('🔒 Deepgram connection closed');
             }
 
-            const transcribeData = await transcribeRes.json();
-            console.log('✅ TRANSCRIBE DATA RECEIVED:', transcribeData);
+            // Use real-time transcript from ref (populated by Transcript events)
+            const finalText = liveTranscriptRef.current.trim();
+            console.log('Final transcript from real-time stream:', finalText);
+            addDebugLog(`Final transcript: "${finalText}"`);
 
-            const { text } = transcribeData;
-            console.log('📝 EXTRACTED TEXT:', text);
-            addDebugLog(`📝 Transcript: "${text}"`);
-
-            if (!text.trim()) {
-              addDebugLog('❌ No speech detected in audio');
+            if (!finalText) {
+              addDebugLog('No speech detected');
               setState('error');
+              stream.getTracks().forEach((track) => track.stop());
               return;
             }
 
-            setTranscript(text);
+            setTranscript(finalText);
+            setTextInput(finalText); // Update textInput for display
 
             // ===== TRANSITION TO THINKING =====
             addDebugLog('💭 Processing your message...');
@@ -489,33 +547,40 @@ export default function VoiceInterface() {
             setState('thinking');
 
             // ===== GET AI RESPONSE =====
-            addDebugLog(`🤖 Calling Claude with: "${text.substring(0, 50)}..."`);
-            console.log('🤖 SENDING TO CONVERSATION API:', { message: text });
+            addDebugLog(`🤖 Calling Claude with: "${finalText.substring(0, 50)}..."`);
+
+            // Build request body - include conversationId if it exists
+            const requestBody: any = { message: finalText };
+            if (currentConversationId) {
+              requestBody.conversationId = currentConversationId;
+            }
+
+            console.log('🤖 Sending to conversation API:', requestBody);
 
             const conversationRes = await fetch('/api/conversation', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ message: text }),
+              body: JSON.stringify(requestBody),
             });
 
-            console.log('📥 CONVERSATION RESPONSE:', {
+            console.log('📥 Conversation response:', {
               status: conversationRes.status,
               statusText: conversationRes.statusText,
             });
 
             if (!conversationRes.ok) {
               const errorText = await conversationRes.text();
-              console.error('❌ CONVERSATION ERROR:', errorText);
+              console.error('❌ Conversation API error:', errorText);
               throw new Error(
                 `Conversation API failed: ${conversationRes.status} - ${errorText}`
               );
             }
 
             const conversationData = await conversationRes.json();
-            console.log('✅ CONVERSATION DATA RECEIVED:', conversationData);
+            console.log('✅ Conversation data received:', conversationData);
 
             const { response: responseText, conversationId: newConvId } = conversationData;
-            console.log('🤖 CLAUDE RESPONSE:', responseText);
+            console.log('🤖 Claude response:', responseText);
             addDebugLog(`✅ Claude responded: "${responseText.substring(0, 50)}..."`);
             addDebugLog('🔊 Speaking response...');
 
@@ -555,26 +620,28 @@ export default function VoiceInterface() {
               setState('idle');
               setTranscript('');
               setResponse('');
+              setTextInput(''); // Clear input for next message
               setDebugLog([]);
             }, 3500);
 
             // Clean up audio stream
             stream.getTracks().forEach((track) => track.stop());
           } catch (error) {
-            addDebugLog(`⚠️  Error: ${(error as Error).message}`);
+            addDebugLog(`⚠️ Error: ${(error as Error).message}`);
             setState('error');
             stream.getTracks().forEach((track) => track.stop());
           }
         };
 
-        // Start recording and timer
-        addDebugLog('▶️  Recording started. Listening for your voice...');
-        mediaRecorder.start();
+        // Start recording with timeslice for real-time streaming (250ms chunks)
+        addDebugLog('▶️ Recording started. Listening for your voice...');
+        mediaRecorder.start(250); // 250ms chunks for low-latency streaming
 
         // Start audio level monitoring with automatic silence detection
         const SILENCE_THRESHOLD = 5; // percent
-        const SILENCE_DURATION_INTERVALS = 15; // 15 * 100ms = 1500ms
+        const SILENCE_DURATION_INTERVALS = 30; // 30 * 100ms = 3000ms (3 seconds)
         let localSilenceCounter = 0;
+        let hasDetectedVoice = false; // Only start counting silence AFTER voice detected
 
         const monitoringInterval = setInterval(() => {
           if (analyserRef.current) {
@@ -584,29 +651,28 @@ export default function VoiceInterface() {
             const level = Math.min(100, (average / 255) * 100);
             setAudioLevel(level);
 
-            // Silence detection (VAD - Voice Activity Detection)
-            if (level < SILENCE_THRESHOLD) {
+            // Voice Activity Detection (VAD)
+            if (level >= SILENCE_THRESHOLD) {
+              // Voice detected
+              hasDetectedVoice = true;
+              localSilenceCounter = 0; // Reset silence counter
+              if (recordingTime > 0.5) {
+                console.log('Voice detected');
+              }
+            } else if (hasDetectedVoice) {
+              // Silence detected AFTER voice was detected
               localSilenceCounter++;
 
-              // Auto-stop recording if silent for sustained period
+              // Auto-stop recording if silent for 3 seconds AFTER speaking
               if (localSilenceCounter >= SILENCE_DURATION_INTERVALS) {
-                console.log('🔇 SILENCE DETECTED - Auto-stopping recording');
-                addDebugLog('🔇 Silence detected - auto-stopping');
+                console.log('Silence detected after speaking - auto-stopping recording');
+                addDebugLog('Silence detected - auto-stopping');
                 if (mediaRecorderRef.current?.state === 'recording') {
                   mediaRecorderRef.current.stop();
                 }
                 clearInterval(monitoringInterval);
                 if (recordingIntervalRef.current) {
                   recordingIntervalRef.current = null;
-                }
-              }
-            } else {
-              // Voice detected, reset silence counter
-              if (localSilenceCounter > 0) {
-                localSilenceCounter = 0;
-                if (recordingTime > 0.5) {
-                  // Only log if we've been recording for a bit
-                  console.log('🔊 Voice detected');
                 }
               }
             }
@@ -617,25 +683,32 @@ export default function VoiceInterface() {
         // Reset silence counter when starting new recording
         setSilenceCounter(0);
       } catch (error) {
-        addDebugLog(`⚠️  Microphone error: ${(error as Error).message}`);
+        addDebugLog(`⚠️ Error: ${(error as Error).message}`);
         setState('error');
       }
     } else if (state === 'listening') {
       // ===== STOP RECORDING (Second Click) =====
-      console.log('🛑 STOP RECORDING TRIGGERED', {
+      console.log('Stop recording triggered', {
         mediaRecorderState: mediaRecorderRef.current?.state,
         recordingIntervalExists: !!recordingIntervalRef.current,
       });
-      addDebugLog('⏹️  Stopping recording...');
+      addDebugLog('Stopping recording...');
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-        console.log('🛑 Calling mediaRecorder.stop()');
+        console.log('Calling mediaRecorder.stop()');
         mediaRecorderRef.current.stop();
       } else {
-        console.warn('⚠️  MediaRecorder is not in recording state:', mediaRecorderRef.current?.state);
+        console.warn('MediaRecorder is not in recording state:', mediaRecorderRef.current?.state);
       }
       if (recordingIntervalRef.current) {
         clearInterval(recordingIntervalRef.current);
       }
+    } else if (state === 'error') {
+      // ===== RESET FROM ERROR STATE =====
+      console.log('Resetting from error state');
+      setState('idle');
+      setTextInput('');
+      setTranscript('');
+      setResponse('');
     }
   };
 
@@ -692,7 +765,7 @@ export default function VoiceInterface() {
   };
 
   return (
-    <div className="voice-interface" onKeyDown={handleKeyDown} tabIndex={0}>
+    <div className="voice-interface">
 
       {/* Privacy Dashboard */}
       {showPrivacy && (
@@ -839,7 +912,7 @@ export default function VoiceInterface() {
                 onClick={() => setShowPrivacy(true)}
                 title="View privacy settings"
               >
-                My Data
+                What We Track
               </button>
             </div>
             <div className="nav-title">
@@ -1066,77 +1139,6 @@ export default function VoiceInterface() {
 
           {/* Status text */}
           <div className="chat-status">{getInvitationText()}</div>
-        </div>
-      )}
-
-      {/* Debug Panel - Visual proof of what's happening */}
-      {state !== 'idle' && !showPrivacy && (
-        <div className="debug-panel">
-          {/* Current State */}
-          <div className="debug-section">
-            <div className="debug-label">State</div>
-            <div className="debug-state">
-              <span className={`state-badge state-${state}`}>
-                {state === 'listening' && '🎤'}
-                {state === 'thinking' && '💭'}
-                {state === 'speaking' && '🔊'}
-                {state === 'error' && '❌'}
-                {' '}{state.charAt(0).toUpperCase() + state.slice(1)}
-              </span>
-            </div>
-          </div>
-
-          {/* Audio Level Meter - PROOF mic is hearing audio */}
-          {state === 'listening' && (
-            <div className="debug-section">
-              <div className="debug-label">Audio Level</div>
-              <div className="audio-meter-container">
-                <div className="audio-meter">
-                  <div
-                    className="audio-meter-bar"
-                    style={{ width: `${audioLevel}%` }}
-                  ></div>
-                </div>
-                <div className="audio-level-value">{Math.round(audioLevel)}%</div>
-              </div>
-            </div>
-          )}
-
-          {/* Recording Timer */}
-          {state === 'listening' && (
-            <div className="debug-section">
-              <div className="debug-label">Recording Time</div>
-              <div className="debug-value">{recordingTime.toFixed(1)}s</div>
-            </div>
-          )}
-
-          {/* API Status / Current Operation */}
-          <div className="debug-section">
-            <div className="debug-label">Current Operation</div>
-            <div className="debug-value">{apiStatus}</div>
-          </div>
-
-          {/* Debug Log - Last 10 messages showing exact steps */}
-          {debugLog.length > 0 && (
-            <div className="debug-section debug-log-section">
-              <div className="debug-label">Processing Steps</div>
-              <div className="debug-log">
-                {debugLog.map((log, idx) => (
-                  <div key={idx} className="debug-log-entry">
-                    {log}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Error Display */}
-          {state === 'error' && (
-            <div className="debug-section error-section">
-              <div className="debug-label">Error Details</div>
-              <div className="error-message">{apiStatus}</div>
-            </div>
-          )}
         </div>
       )}
 
@@ -1803,201 +1805,6 @@ export default function VoiceInterface() {
           letter-spacing: 0.1em;
         }
 
-        /* Debug Panel - Detailed visual feedback */
-        .debug-panel {
-          position: fixed;
-          bottom: 2rem;
-          left: 2rem;
-          z-index: 50;
-          background: rgba(10, 10, 10, 0.95);
-          border: 1px solid rgba(212, 165, 116, 0.4);
-          border-radius: 8px;
-          padding: 1.5rem;
-          max-width: 380px;
-          width: calc(100% - 4rem);
-          backdrop-filter: blur(10px);
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-        }
-
-        .debug-section {
-          display: flex;
-          flex-direction: column;
-          gap: 0.5rem;
-          margin-bottom: 1rem;
-          padding-bottom: 1rem;
-          border-bottom: 1px solid rgba(212, 165, 116, 0.2);
-        }
-
-        .debug-section:last-child {
-          margin-bottom: 0;
-          padding-bottom: 0;
-          border-bottom: none;
-        }
-
-        .debug-log-section {
-          border-bottom: 1px solid rgba(212, 165, 116, 0.2);
-        }
-
-        .debug-label {
-          font-family: 'Inconsolata', monospace;
-          font-size: 0.7rem;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.15em;
-          color: rgba(212, 165, 116, 0.7);
-        }
-
-        .debug-value {
-          font-family: 'Inconsolata', monospace;
-          font-size: 0.9rem;
-          font-weight: 400;
-          color: rgba(250, 250, 246, 0.9);
-          letter-spacing: 0.05em;
-        }
-
-        /* State Badge */
-        .debug-state {
-          display: flex;
-          gap: 0.5rem;
-        }
-
-        .state-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.5rem;
-          font-family: 'Inconsolata', monospace;
-          font-size: 0.85rem;
-          font-weight: 600;
-          padding: 0.5rem 1rem;
-          border-radius: 4px;
-          text-transform: uppercase;
-          letter-spacing: 0.1em;
-        }
-
-        .state-badge.state-listening {
-          background: rgba(76, 175, 80, 0.15);
-          color: #4CAF50;
-          border: 1px solid rgba(76, 175, 80, 0.4);
-          animation: pulse-green 2s ease-in-out infinite;
-        }
-
-        .state-badge.state-thinking {
-          background: rgba(212, 165, 116, 0.15);
-          color: rgba(212, 165, 116, 1);
-          border: 1px solid rgba(212, 165, 116, 0.4);
-        }
-
-        .state-badge.state-speaking {
-          background: rgba(255, 193, 7, 0.15);
-          color: #FFC107;
-          border: 1px solid rgba(255, 193, 7, 0.4);
-          animation: pulse-yellow 2s ease-in-out infinite;
-        }
-
-        .state-badge.state-error {
-          background: rgba(244, 67, 54, 0.15);
-          color: #F44336;
-          border: 1px solid rgba(244, 67, 54, 0.4);
-          animation: pulse-red 2s ease-in-out infinite;
-        }
-
-        @keyframes pulse-green {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.7; }
-        }
-
-        @keyframes pulse-yellow {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.7; }
-        }
-
-        @keyframes pulse-red {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.7; }
-        }
-
-        /* Audio Meter */
-        .audio-meter-container {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-        }
-
-        .audio-meter {
-          flex: 1;
-          height: 28px;
-          background: rgba(250, 250, 246, 0.08);
-          border: 1px solid rgba(212, 165, 116, 0.3);
-          border-radius: 4px;
-          overflow: hidden;
-          position: relative;
-        }
-
-        .audio-meter-bar {
-          height: 100%;
-          background: linear-gradient(90deg,
-            rgba(76, 175, 80, 0.6) 0%,
-            rgba(76, 175, 80, 1) 50%,
-            rgba(255, 193, 7, 0.8) 100%
-          );
-          transition: width 0.05s ease-out;
-          border-radius: 2px;
-          box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
-        }
-
-        .audio-level-value {
-          font-family: 'Inconsolata', monospace;
-          font-size: 0.85rem;
-          font-weight: 600;
-          color: rgba(212, 165, 116, 0.9);
-          min-width: 40px;
-          text-align: right;
-        }
-
-        /* Debug Log */
-        .debug-log {
-          display: flex;
-          flex-direction: column;
-          gap: 0.5rem;
-          max-height: 200px;
-          overflow-y: auto;
-          padding: 0.75rem;
-          background: rgba(0, 0, 0, 0.3);
-          border: 1px solid rgba(212, 165, 116, 0.2);
-          border-radius: 4px;
-        }
-
-        .debug-log-entry {
-          font-family: 'Inconsolata', monospace;
-          font-size: 0.75rem;
-          color: rgba(250, 250, 246, 0.8);
-          line-height: 1.4;
-          padding: 0.25rem 0;
-          letter-spacing: 0.02em;
-          border-left: 2px solid rgba(212, 165, 116, 0.3);
-          padding-left: 0.5rem;
-        }
-
-        /* Error Section */
-        .error-section {
-          background: rgba(244, 67, 54, 0.08);
-          border: 1px solid rgba(244, 67, 54, 0.3);
-          border-radius: 4px;
-          padding: 1rem;
-          margin: 0;
-          border-bottom: none;
-        }
-
-        .error-message {
-          font-family: 'Inconsolata', monospace;
-          font-size: 0.85rem;
-          color: #FF7043;
-          background: rgba(244, 67, 54, 0.05);
-          padding: 0.75rem;
-          border-radius: 3px;
-          border-left: 3px solid #F44336;
-          line-height: 1.5;
-        }
 
         /* Responsive */
         @media (max-width: 768px) {
@@ -2027,17 +1834,6 @@ export default function VoiceInterface() {
             padding: 0.5rem 0.875rem;
           }
 
-          .debug-panel {
-            max-width: 320px;
-            padding: 1rem;
-            bottom: 1rem;
-            left: 1rem;
-          }
-
-          .debug-log {
-            max-height: 120px;
-            font-size: 0.7rem;
-          }
         }
 
         /* Reduced Motion Support - Accessibility for vestibular disorders */
@@ -2211,8 +2007,8 @@ export default function VoiceInterface() {
         /* Mic Button */
         .input-mic-button {
           flex-shrink: 0;
-          width: 44px;
-          height: 44px;
+          width: 60px;
+          height: 60px;
           border-radius: 50%;
           border: 2px solid rgba(212, 165, 116, 0.4);
           background: transparent;
@@ -2253,20 +2049,21 @@ export default function VoiceInterface() {
         }
 
         .mic-icon {
-          width: 20px;
-          height: 20px;
+          width: 28px;
+          height: 28px;
         }
 
         /* Text Input */
         .text-input {
           flex: 1;
-          padding: 0.75rem 1rem;
+          height: 60px;
+          padding: 1rem 1.25rem;
           border: 1px solid rgba(212, 165, 116, 0.3);
-          border-radius: 4px;
+          border-radius: 8px;
           background: rgba(250, 250, 246, 0.05);
           color: rgba(250, 250, 246, 0.9);
           font-family: 'Literata', Georgia, serif;
-          font-size: 0.95rem;
+          font-size: 1rem;
           transition: all 0.2s ease;
           outline: none;
         }
@@ -2288,8 +2085,8 @@ export default function VoiceInterface() {
         /* Send Button */
         .send-button {
           flex-shrink: 0;
-          width: 44px;
-          height: 44px;
+          width: 60px;
+          height: 60px;
           border-radius: 50%;
           border: 2px solid rgba(212, 165, 116, 0.4);
           background: transparent;
@@ -2315,8 +2112,8 @@ export default function VoiceInterface() {
         }
 
         .send-icon {
-          width: 20px;
-          height: 20px;
+          width: 28px;
+          height: 28px;
         }
 
         /* Input Status */
